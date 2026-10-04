@@ -1,0 +1,62 @@
+<div id="work-panel">
+    <ul class="chip-row" aria-label="Filter by kind">
+        <li>
+            <a class="chip"
+               href="{% querystring kind=None %}"
+               hx-get="{% querystring kind=None %}"
+               hx-target="#work-panel"
+               hx-swap="outerHTML"
+               hx-push-url="true"
+               aria-pressed="{% if not active_kind %}true{% else %}false{% endif %}">All</a>
+        </li>
+        {% for value, label in kinds %}
+            <li>
+                <a class="chip"
+                   href="{% querystring kind=value %}"
+                   hx-get="{% querystring kind=value %}"
+                   hx-target="#work-panel"
+                   hx-swap="outerHTML"
+                   hx-push-url="true"
+                   aria-pressed="{% if active_kind == value %}true{% else %}false{% endif %}">{{ label }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <div aria-live="polite">
+        {% if entries_by_year %}
+            {% for year, entries in entries_by_year %}
+                <h2 class="year-divider">{{ year }}</h2>
+                {% for entry in entries %}
+                    <article class="entry-card">
+                        <div class="entry-card__meta">
+                            <span class="status-dot" aria-hidden="true"></span>
+                            {{ entry.get_kind_display }}{% if entry.status %} · {{ entry.get_status_display }}{% endif %} · {{ entry.date|date:"M Y" }}
+                            {% if entry.is_sample %}<span class="sample-badge">Sample</span>{% endif %}
+                        </div>
+                        {% if entry.has_case_study %}
+                            <h3><a href="{% url 'portfolio:entry_detail' entry.slug %}">{{ entry.title }}</a></h3>
+                        {% else %}
+                            <h3>{{ entry.title }}</h3>
+                        {% endif %}
+                        <p>{{ entry.summary }}</p>
+                        {% if entry.tags.all %}
+                            <ul class="chip-row">
+                                {% for tag in entry.tags.all %}
+                                    <li><a class="chip"
+   href="{% url 'portfolio:tag_detail' tag.slug %}">{{ tag.name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <div class="entry-card__links">
+                            {% if entry.has_case_study %}<a href="{% url 'portfolio:entry_detail' entry.slug %}">Case study</a>{% endif %}
+                            {% if entry.repo_url %}<a href="{{ entry.repo_url }}">Repository</a>{% endif %}
+                            {% if entry.live_url %}<a href="{{ entry.live_url }}">Live</a>{% endif %}
+                            {% if entry.writeup_url %}<a href="{{ entry.writeup_url }}">Write-up</a>{% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            <p>No entries match this filter yet.</p>
+        {% endif %}
+    </div>
+</div>

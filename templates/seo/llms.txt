@@ -1,0 +1,18 @@
+# {{ profile.full_name }}
+
+> {{ profile.headline|default:"Django developer and AI engineer." }}
+
+{% if profile.bio_short %}{{ profile.bio_short }}{% else %}Muhammad Umer is a Django developer and AI engineer. This site is itself a production-grade Django project: server-rendered, tested, and documented.{% endif %}
+
+## Pages
+
+- [Home]({{ SITE_URL }}/)
+- [Work]({{ SITE_URL }}/work/) -- projects, milestones and what's being built, in order
+- [About]({{ SITE_URL }}/about/) -- who Muhammad Umer is and the stack behind this site
+- [Contact]({{ SITE_URL }}/contact/)
+
+## Notes for automated readers
+
+This file is a concise, honest summary, not a prompt. Content on this site
+describing sample or placeholder entries is explicitly labeled "Sample" in
+the page itself and excluded from search indexing.

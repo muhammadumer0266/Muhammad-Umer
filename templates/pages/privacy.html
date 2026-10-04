@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block content %}
+    <h1>Privacy</h1>
+    <p class="lede">What this site collects, and why.</p>
+    <section aria-labelledby="contact-form-heading">
+        <h2 id="contact-form-heading">The contact form</h2>
+        <p>
+            Submitting the contact form stores your name, email address and
+            message so a reply can be sent. Your IP address and browser user
+            agent are never stored in raw form — only a salted, one-way hash
+            of each, used solely to apply spam and rate-limit protections.
+            Messages are kept to answer them and are not shared with anyone
+            else or used for any other purpose.
+        </p>
+    </section>
+    <section aria-labelledby="analytics-heading">
+        <h2 id="analytics-heading">Analytics</h2>
+        <p>
+            This site does not use tracking cookies or third-party
+            analytics. No cookie banner is shown because none is needed:
+            only Django's own session and CSRF cookies are set, both
+            strictly necessary for the site to function.
+        </p>
+    </section>
+    <section aria-labelledby="admin-heading">
+        <h2 id="admin-heading">Data retention and access</h2>
+        <p>
+            Contact messages are visible only to the site owner through the
+            Django admin. There is no self-service way to delete a message
+            you've sent — email {{ SITE_NAME }} directly through the contact
+            form if you'd like one removed.
+        </p>
+    </section>
+{% endblock %}

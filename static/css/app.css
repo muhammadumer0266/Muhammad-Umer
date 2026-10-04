@@ -1,0 +1,298 @@
+/* Design tokens mirrored in frontend/src/css/app.css.
+   See docs/adr/0002-plain-css-instead-of-tailwind-for-now.md. */
+:root {
+  --bg: #0d0910;
+  --ink: #f7f1e9;
+  --soft: #e0d6cd;
+  --mute: #ab9fa8;
+  --accent: #d9b8a3;
+  --accent-hi: #f2d8c6;
+  --glow: #b56bd6;
+  --glow-hi: #e9c4f5;
+  --line: rgba(217, 184, 163, 0.28);
+  --panel: rgba(16, 10, 19, 0.9);
+  --f-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --f-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- 3D stage enhancement layer ---------- */
+#gl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+/* No WebGL, script failed, or Save-Data/low-memory hints: static gradient
+   poster instead of the canvas. Never an error, never a blank frame. */
+html.nogl #gl { display: none; }
+html.nogl body {
+  background:
+    radial-gradient(ellipse 60% 50% at 75% 20%, rgba(181, 107, 214, 0.16), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(181, 107, 214, 0.1), transparent 60%),
+    var(--bg);
+}
+
+/* ---------- scroll reveal (see static/js/reveal.js) ---------- */
+.rv {
+  opacity: 0.25;
+  transform: translateY(28px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.rv.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- card tilt (see static/js/tilt.js) ---------- */
+.entry-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.15s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-card { transform: none; transition: none; }
+}
+
+.sound-toggle {
+  font-size: 0.72rem;
+  padding: 0.5rem 0.9rem;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--soft);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--f-display);
+  color: var(--ink);
+  font-weight: 500;
+  line-height: 1.15;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+
+h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.4rem); }
+h3 { font-size: clamp(1.2rem, 2.2vw, 1.6rem); }
+
+em { color: var(--accent-hi); font-style: italic; }
+
+a { color: var(--accent); }
+a:hover, a:focus-visible { color: var(--accent-hi); }
+
+:focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 0.75rem 1.25rem;
+  border: 1px solid var(--line);
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}
+
+.label {
+  font-family: var(--f-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.site-header__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.site-header__name {
+  font-family: var(--f-display);
+  color: var(--ink);
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+.site-nav ul {
+  display: flex;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+.site-nav a {
+  text-decoration: none;
+  font-family: var(--f-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+}
+
+main { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; position: relative; }
+main.scrim::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -1.5rem;
+  background: radial-gradient(ellipse at center, rgba(13, 9, 16, 0.85) 0%, rgba(13, 9, 16, 0) 70%);
+  z-index: -1;
+}
+
+.hero { padding-top: 2rem; }
+.hero .label { display: block; margin-bottom: 0.75rem; }
+.hero p.lede { font-size: 1.15rem; color: var(--soft); max-width: 60ch; }
+
+section { margin-top: 4rem; }
+section > h2 { margin-bottom: 1rem; }
+
+.btn {
+  display: inline-block;
+  font-family: var(--f-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.82rem;
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  text-decoration: none;
+  color: var(--accent);
+  background: transparent;
+}
+.btn:hover, .btn:focus-visible { color: var(--bg); background: var(--accent); }
+.btn--solid { background: var(--accent); color: var(--bg); }
+.btn--solid:hover, .btn--solid:focus-visible { background: var(--accent-hi); border-color: var(--accent-hi); }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0 0 1.5rem; padding: 0; }
+.chip {
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+  color: var(--soft);
+}
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-hi); }
+
+.year-divider {
+  font-family: var(--f-mono);
+  color: var(--mute);
+  letter-spacing: 0.14em;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.4rem;
+  margin: 2.5rem 0 1.25rem;
+}
+
+.entry-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 1.25rem 1.4rem;
+  margin-bottom: 1.25rem;
+}
+.entry-card__meta {
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  color: var(--mute);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.status-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--glow); display: inline-block; }
+.entry-card h3 { margin: 0 0 0.4rem; }
+.entry-card p { margin: 0 0 0.75rem; color: var(--soft); }
+.entry-card__links { display: flex; gap: 1rem; font-family: var(--f-mono); font-size: 0.8rem; }
+
+dl.toolbox { display: grid; gap: 1.5rem; }
+dl.toolbox dt { font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.4rem; }
+dl.toolbox dd { margin: 0; color: var(--soft); }
+
+form.stack { display: grid; gap: 1.25rem; max-width: 34rem; }
+form.stack label { display: block; font-family: var(--f-mono); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.4rem; }
+form.stack input, form.stack textarea {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 0.7rem 0.9rem;
+  font-family: var(--f-body);
+  font-size: 1rem;
+  border-radius: 2px;
+}
+form.stack input:focus, form.stack textarea:focus { border-color: var(--accent); }
+.field-error { color: var(--accent-hi); font-size: 0.85rem; margin-top: 0.3rem; }
+.honeypot-field { position: absolute; left: -9999px; }
+.form-success {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 1rem 1.25rem;
+  border-radius: 2px;
+  color: var(--accent-hi);
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 5rem;
+  padding: 2rem 1.25rem;
+}
+.site-footer__inner { max-width: 72rem; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.site-footer ul { list-style: none; display: flex; gap: 1rem; margin: 0; padding: 0; }
+.site-footer small { color: var(--mute); font-family: var(--f-mono); }
+
+.sample-badge {
+  display: inline-block;
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: 2px;
+  padding: 0.15rem 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.error-page { text-align: center; padding-top: 6rem; }
+.error-page .label { display: block; margin-bottom: 1rem; }

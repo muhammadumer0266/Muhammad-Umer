@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Page not found | {{ SITE_NAME }}{% endblock %}
+{% block description %}This page does not exist.{% endblock %}
+{% block extra_head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+    <div class="error-page">
+        <span class="label">404</span>
+        <h1>Page not found</h1>
+        <p>That page doesn't exist. It may have moved.</p>
+        <p><a class="btn btn--solid" href="{% url 'portfolio:home' %}">Back to home</a></p>
+    </div>
+{% endblock %}

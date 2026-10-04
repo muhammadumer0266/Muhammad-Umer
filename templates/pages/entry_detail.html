@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    {% if entry.is_sample %}<meta name="robots" content="noindex">{% endif %}
+{% endblock %}
+{% block content %}
+    <p class="lede"><a href="{% url 'portfolio:work_list' %}">← All work</a></p>
+    <div class="entry-card__meta">
+        <span class="status-dot" aria-hidden="true"></span>
+        {{ entry.get_kind_display }}{% if entry.status %} · {{ entry.get_status_display }}{% endif %} · {{ entry.date|date:"M Y" }}
+        {% if entry.is_sample %}<span class="sample-badge">Sample</span>{% endif %}
+    </div>
+    <h1>{{ entry.title }}</h1>
+    <p class="lede">{{ entry.summary }}</p>
+    {% if entry.tags.all %}
+        <ul class="chip-row">
+            {% for tag in entry.tags.all %}
+                <li><a class="chip" href="{% url 'portfolio:tag_detail' tag.slug %}">{{ tag.name }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if entry.metrics %}
+        <ul class="chip-row">
+            {% for metric in entry.metrics %}
+                <li class="chip">{{ metric }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <p class="entry-card__links">
+        {% if entry.repo_url %}<a href="{{ entry.repo_url }}">Repository</a>{% endif %}
+        {% if entry.live_url %}<a href="{{ entry.live_url }}">Live demo</a>{% endif %}
+        {% if entry.writeup_url %}<a href="{{ entry.writeup_url }}">External write-up</a>{% endif %}
+    </p>
+    <div class="case-study-body">{{ entry.body_md|markdown }}</div>
+{% endblock %}

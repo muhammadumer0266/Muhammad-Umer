@@ -1,0 +1,49 @@
+name: Deploy
+
+# TEMPLATE: this cannot run yet -- there is no server, domain, or set of
+# DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY secrets configured (see
+# docs/TODO_OWNER.md and docs/RUNBOOK.md). Fill those in as repository
+# secrets, uncomment the real deploy steps below, and remove this notice
+# once a real target exists.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -f docker/Dockerfile -t portfolio:${{ github.ref_name }} .
+
+      # - name: Push image to registry
+      #   run: |
+      #     echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+      #     docker tag portfolio:${{ github.ref_name }} ${{ secrets.REGISTRY_URL }}/portfolio:${{ github.ref_name }}
+      #     docker push ${{ secrets.REGISTRY_URL }}/portfolio:${{ github.ref_name }}
+      #
+      # - name: Deploy over SSH
+      #   uses: appleboy/ssh-action@v1
+      #   with:
+      #     host: ${{ secrets.DEPLOY_HOST }}
+      #     username: ${{ secrets.DEPLOY_USER }}
+      #     key: ${{ secrets.DEPLOY_SSH_KEY }}
+      #     script: |
+      #       cd /srv/portfolio
+      #       git fetch --tags
+      #       git checkout ${{ github.ref_name }}
+      #       docker compose pull
+      #       docker compose run --rm web python manage.py migrate
+      #       docker compose up -d
+      #
+      # - name: Smoke test
+      #   run: curl -f https://${{ secrets.SITE_DOMAIN }}/healthz/
+      #
+      # Roll back automatically if the smoke test fails: re-run the SSH
+      # step with `git checkout <previous-tag>` and `docker compose up -d`
+      # (see docs/RUNBOOK.md "Rollback").

@@ -1,0 +1,34 @@
+[
+  {
+    "slug": "sample-project-one",
+    "title": "Sample Project One",
+    "kind": "project",
+    "status": "shipped",
+    "date": "2026-01-01",
+    "summary": "Sample placeholder entry. Replace with a real project before launch — see docs/TODO_OWNER.md.",
+    "body_md": "# Sample\n\nThis is placeholder body copy, not a real case study.",
+    "tags": ["Django", "Sample"],
+    "metrics": ["Sample metric — not real"],
+    "live_url": "",
+    "repo_url": "",
+    "writeup_url": "",
+    "featured": true,
+    "is_published": true,
+    "is_sample": true,
+    "seo_title": "",
+    "seo_description": ""
+  },
+  {
+    "slug": "sample-milestone-one",
+    "title": "Sample Milestone One",
+    "kind": "milestone",
+    "status": "",
+    "date": "2026-02-01",
+    "summary": "Sample placeholder milestone entry used for local development and demos only.",
+    "tags": ["Sample"],
+    "metrics": [],
+    "featured": false,
+    "is_published": true,
+    "is_sample": true
+  }
+]

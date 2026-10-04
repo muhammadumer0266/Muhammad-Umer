@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load core_extras seo_extras %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    {% profile_page_jsonld profile %}
+{% endblock %}
+{% block content %}
+    <h1>About</h1>
+    <p class="lede">Muhammad Umer is a Django and AI engineer.</p>
+    {% if profile.bio_md %}
+        <div>{{ profile.bio_md|markdown }}</div>
+    {% else %}
+        <p>
+            <em>TODO(owner)</em>: a longer bio goes here once supplied — see
+            <code>docs/TODO_OWNER.md</code>.
+        </p>
+    {% endif %}
+    <section id="stack" aria-labelledby="stack-heading">
+        <h2 id="stack-heading">Toolbox</h2>
+        {% if skill_groups %}
+            {% for group in skill_groups %}
+                <h3>{{ group.name }}</h3>
+                <dl class="toolbox">
+                    {% for skill in group.skills.all %}
+                        <div>
+                            <dt>{{ skill.name }}</dt>
+                        </div>
+                    {% endfor %}
+                </dl>
+            {% endfor %}
+        {% else %}
+            <p><em>TODO(owner)</em>: skills/toolbox not yet configured in admin.</p>
+        {% endif %}
+    </section>
+    <section aria-labelledby="api-heading">
+        <h2 id="api-heading">A real, live API</h2>
+        <p>This site exposes a small read-only API once it ships (see <code>/api/docs/</code>):</p>
+        <pre><code>curl {{ SITE_URL }}/api/v1/entries/</code></pre>
+    </section>
+{% endblock %}

@@ -1,0 +1,19 @@
+# Golden Q&A set for the Ask feature evaluation.
+#
+# STARTER SET, not the real one: this should be "written
+# with the owner" against real, indexed content, and there is no real
+# content indexed yet (see docs/TODO_OWNER.md). Sample/placeholder entries
+# are deliberately excluded from the RAG index (reindex_rag skips
+# is_sample=True) so the demo never presents placeholder content as real --
+# which means this starter set can only exercise refusal correctness, not
+# retrieval hit-rate, until real projects/case studies exist.
+#
+# TODO(owner): once real content is indexed, add "expect_refusal: false"
+# cases here with `expected_title_contains` set to something from that
+# real content, so hit-rate@k becomes meaningful.
+- question: "What is the meaning of life?"
+  expect_refusal: true
+- question: "What's your favorite pizza topping?"
+  expect_refusal: true
+- question: "Can you recommend a good stock to buy?"
+  expect_refusal: true

@@ -1,0 +1,13 @@
+body {
+  background: #0d0910;
+  color: #e0d6cd;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+.box { text-align: center; padding: 2rem; }
+h1 { color: #f7f1e9; }
+a { color: #d9b8a3; }

@@ -1,0 +1,28 @@
+/* Tailwind entry point and design tokens. See docs/DESIGN_SYSTEM.md.
+   Built in M2; this placeholder keeps the Docker build stage valid. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0d0910; /* aubergine black */
+  --ink: #f7f1e9; /* ivory, headings and primary text */
+  --soft: #e0d6cd; /* body text */
+  --mute: #ab9fa8; /* secondary text, not for long paragraphs */
+  --accent: #d9b8a3; /* rose champagne: labels, buttons, rules */
+  --accent-hi: #f2d8c6; /* emphasis, hover, italic display words */
+  --glow: #b56bd6; /* motion only: pulses, status dots, ring lines */
+  --glow-hi: #e9c4f5; /* chips on dark, milestone tag */
+  --line: rgba(217, 184, 163, 0.28);
+  --panel: rgba(16, 10, 19, 0.9);
+  --f-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --f-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--soft);
+  font-family: var(--f-body);
+}

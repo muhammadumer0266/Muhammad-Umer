@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block content %}
+    <section id="hero" class="hero rv">
+        <span class="label">Django developer · AI engineer</span>
+        <h1>{{ profile.full_name }}</h1>
+        <p class="lede">
+            {% if profile.bio_short %}
+                {{ profile.bio_short }}
+            {% else %}
+                Muhammad Umer is a Django and AI engineer. He builds production-grade
+                backends, retrieval-augmented tools, and this site itself — server-rendered,
+                tested, and readable with JavaScript off.
+            {% endif %}
+        </p>
+        <p><a class="btn btn--solid" href="{% url 'portfolio:work_list' %}">See the work</a>
+            <a class="btn" href="{% url 'contact:contact' %}">Get in touch</a></p>
+    </section>
+    <section aria-labelledby="featured-heading" class="rv">
+        <h2 id="featured-heading">Featured work</h2>
+        {% if featured_entries %}
+            {% for entry in featured_entries %}
+                <article class="entry-card">
+                    <div class="entry-card__meta">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        {{ entry.get_kind_display }} · {{ entry.date|date:"M Y" }}
+                        {% if entry.is_sample %}<span class="sample-badge">Sample</span>{% endif %}
+                    </div>
+                    <h3>{{ entry.title }}</h3>
+                    <p>{{ entry.summary }}</p>
+                    <div class="entry-card__links">
+                        {% if entry.repo_url %}<a href="{{ entry.repo_url }}">Read the repository</a>{% endif %}
+                        {% if entry.live_url %}<a href="{{ entry.live_url }}">View the live demo</a>{% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <p>No featured work published yet — check back soon.</p>
+        {% endif %}
+    </section>
+    <section aria-labelledby="about-heading" class="rv">
+        <h2 id="about-heading">About</h2>
+        <p>
+            Muhammad Umer is a Django developer and AI engineer. Read more on the
+            <a href="{% url 'portfolio:about' %}">about page</a>.
+        </p>
+    </section>
+    <section id="system" aria-labelledby="how-heading" class="rv">
+        <h2 id="how-heading">How a request travels</h2>
+        <p class="label">Edge → Django → PostgreSQL/pgvector → Celery → provider</p>
+        <p>
+            Every request hits Caddy first (TLS, compression, security headers), then
+            Django, then PostgreSQL — with pgvector powering the retrieval-augmented
+            "Ask" feature once it ships. Background work (email, embeddings, image
+            rendering) runs on Celery. See
+            <a href="https://github.com/muhammadumer0266">the GitHub profile</a> for the
+            code behind it.
+        </p>
+    </section>
+    <section id="ask" aria-labelledby="ask-heading" class="rv">
+        <h2 id="ask-heading">Ask</h2>
+        <p>
+            A retrieval-augmented Q&amp;A demo that answers only from what's
+            actually published on this site, with citations, or says
+            honestly that it doesn't know.
+        </p>
+        <p><a class="btn" href="{% url 'ai:ask' %}">Try it</a></p>
+    </section>
+    <section id="contact" aria-labelledby="contact-heading" class="rv">
+        <h2 id="contact-heading">Get in touch</h2>
+        <p><a class="btn btn--solid" href="{% url 'contact:contact' %}">Contact Muhammad</a></p>
+    </section>
+{% endblock %}

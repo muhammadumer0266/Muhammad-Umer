@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block content %}
+    <h1 id="work">Work</h1>
+    <p class="lede">Projects, milestones and learning, newest first.</p>
+    {% include "partials/_work_panel.html" %}
+{% endblock %}

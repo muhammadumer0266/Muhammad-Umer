@@ -1,0 +1,71 @@
+{% load static seo_extras %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csp-nonce" content="{{ request.csp_nonce }}">
+        <title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
+        <meta name="description"
+              content="{% block description %}{{ SITE_NAME }} — Django developer and AI engineer.{% endblock %}">
+        <link rel="canonical" href="{{ CANONICAL_URL }}">
+        {% for link in social_links %}
+            {% if link.rel_me %}<link rel="me" href="{{ link.url }}">{% endif %}
+        {% endfor %}
+        {% if GOOGLE_SITE_VERIFICATION %}
+            <meta name="google-site-verification"
+                  content="{{ GOOGLE_SITE_VERIFICATION }}">
+        {% endif %}
+        {% if BING_SITE_VERIFICATION %}<meta name="msvalidate.01" content="{{ BING_SITE_VERIFICATION }}">{% endif %}
+        <link rel="stylesheet" href="{% static 'css/app.css' %}">
+        {% block extra_head %}{% endblock %}
+        <script src="{% static 'js/htmx.min.js' %}" defer></script>
+        <script type="module" src="{% static 'js/main.js' %}" defer></script>
+        {% site_jsonld profile social_links %}
+    </head>
+    <body>
+        <a class="skip-link" href="#main">Skip to content</a>
+        <canvas id="gl" aria-hidden="true"></canvas>
+        <header class="site-header">
+            <div class="site-header__inner">
+                <a class="site-header__name" href="{% url 'portfolio:home' %}">{{ profile.full_name }}</a>
+                <nav class="site-nav" aria-label="Primary">
+                    <ul>
+                        <li><a href="{% url 'portfolio:home' %}">Home</a></li>
+                        <li><a href="{% url 'portfolio:work_list' %}">Work</a></li>
+                        <li><a href="{% url 'portfolio:about' %}">About</a></li>
+                        <li><a href="{% url 'contact:contact' %}">Contact</a></li>
+                    </ul>
+                </nav>
+                <button type="button"
+                        id="sound-toggle"
+                        class="btn sound-toggle"
+                        aria-pressed="false">
+                    <span data-sound-label>Sound off</span>
+                </button>
+            </div>
+        </header>
+        <main id="main" class="scrim" tabindex="-1">
+            {% if messages %}
+                <ul class="messages" aria-live="polite">
+                    {% for message in messages %}
+                        <li class="form-success">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+        <footer class="site-footer">
+            <div class="site-footer__inner">
+                <small>© {% now "Y" %} {{ profile.full_name }}</small>
+                <ul>
+                    {% for link in social_links %}
+                        <li><a href="{{ link.url }}"
+   {% if link.rel_me %} rel="me"{% endif %}>{{ link.get_platform_display }}</a></li>
+                    {% endfor %}
+                    <li><a href="{% url 'core:privacy' %}">Privacy</a></li>
+                </ul>
+            </div>
+        </footer>
+    </body>
+</html>

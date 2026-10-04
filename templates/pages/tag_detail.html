@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    {% if noindex %}<meta name="robots" content="noindex">{% endif %}
+{% endblock %}
+{% block content %}
+    <h1>Work tagged “{{ tag.name }}”</h1>
+    <p class="lede"><a href="{% url 'portfolio:work_list' %}">← All work</a></p>
+    {% include "partials/_work_panel.html" %}
+{% endblock %}
