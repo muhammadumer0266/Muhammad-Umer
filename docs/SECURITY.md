@@ -17,7 +17,12 @@ failure doesn't open the next.
   and local tooling out of the image.
 - `POSTGRES_PASSWORD` has no default; compose refuses to start without it.
 
-## Identity: the admin
+## Identity: the dashboard ("Studio")
+
+Django's built-in admin is removed (`django.contrib.admin` is not
+installed). Everything is managed from the custom dashboard in
+`apps/dashboard`, served at the secret `ADMIN_URL` path.
+
 | Control | Where |
 |---|---|
 | Secret, non-default path (`ADMIN_URL`) | settings + deploy check `core.W001` |
@@ -25,7 +30,9 @@ failure doesn't open the next.
 | Password + TOTP 2FA, with one-time backup codes (`ADMIN_REQUIRE_OTP`, on in prod) | `config/urls.py`, `manage.py enroll_admin_otp` |
 | Lockout after 5 failures for 1 h (django-axes), keyed on the real client IP | `AXES_*` settings |
 | 2-hour sessions that end when the browser closes; `__Host-` cookies in prod | `SESSION_*` settings |
-| Admin pages sent `Cache-Control: no-store` | `AdminAccessMiddleware` |
+| Every dashboard view re-checks active + staff + OTP-verified session (not just at login) | `apps/dashboard/auth.py: staff_required` |
+| Dashboard pages sent `Cache-Control: no-store` and `X-Robots-Tag: noindex` | `AdminAccessMiddleware` |
+| Deletes and state changes are POST-only with CSRF; login `next` can't leave the dashboard | `apps/dashboard` |
 
 **Enroll before deploying** (otherwise you're locked out by design):
 
@@ -36,13 +43,24 @@ failure doesn't open the next.
 - The real client IP comes from `apps/core/net.py`. It counts proxies from the
   right of `X-Forwarded-For` (`TRUSTED_PROXY_COUNT`, 1 in prod), so a client
   can't spoof its IP to dodge rate limits, lockouts or the admin allowlist.
-- Rate limits: contact 5/h, Ask is set in the admin (default 20/h), API 60/min.
+- Rate limits: contact 5/h, résumé requests 5/h, Ask is set in the dashboard
+  (default 20/h), API 60/min.
 - CSP: `script-src 'self'` + nonce only; `form-action`, `frame-src`,
   `object-src`, `base-uri` and `frame-ancestors` are locked down;
   `upgrade-insecure-requests` in prod. Also COOP/CORP, `nosniff`,
   `Referrer-Policy`, and a deny-all `Permissions-Policy`.
 - Public API: anonymous, **read-only**, and it accepts no credentials at all
   (an admin session can't raise its privileges). JSON only in production.
+
+## Résumés (email-gated, private)
+- Résumé PDFs live in `PRIVATE_MEDIA_ROOT`, outside `/media/`, on a Docker
+  volume mounted into Django only (never Caddy). `PrivateStorage.url()`
+  refuses to produce a URL at all.
+- Visitors enter an email on `/resume/` (honeypot + time-trap + 5/h per IP);
+  they get a signed link valid for 15 minutes, and Django streams the file
+  with `Cache-Control: no-store`. Every request is stored (email, salted IP
+  hash) and listed in **Dashboard → Download requests**, with CSV export that
+  neutralises spreadsheet-formula injection.
 
 ## Uploads (apps/core/uploads.py)
 Photo, résumé and certificates accept JPG/PNG/WebP (5 MB) or PDF (10 MB)
@@ -62,7 +80,7 @@ Three checkpoints, logged per question in **Ask logs → guardrail**:
    that weren't retrieved, refuses uncited answers, redacts emails, phone
    numbers and API-key-shaped tokens, and applies admin rules.
 
-The baseline is code and can't be disabled. On top of it, **Admin → Ai →
+The baseline is code and can't be disabled. On top of it, **Dashboard → Ask AI →
 Guardrail policy** offers a kill switch, length limits, the similarity
 threshold, top-k, the rate limit, citation and PII toggles, and the user-facing
 messages. **Guardrail rules** add keyword or regex block/redact rules per stage,

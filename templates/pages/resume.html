@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+    <section class="resume-gate">
+        <span class="label">Résumé</span>
+        <h1>Get {{ profile.full_name }}’s résumé</h1>
+        {% if resume_available %}
+            <p class="lede">Enter your email and the PDF downloads straight away.</p>
+            {% if form.non_field_errors %}
+                <div class="form-error" role="alert">
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+            <form class="stack resume-gate__form" method="post" novalidate>
+                {% csrf_token %}
+                {{ form.rendered_at }}
+                <div class="honeypot-field" aria-hidden="true">
+                    <label for="id_website">Leave this field empty</label>
+                    {{ form.website }}
+                </div>
+                <div>
+                    <label for="{{ form.email.id_for_label }}">Your email</label>
+                    {{ form.email }}
+                    <p class="field-help" id="email-help">
+                        Used only so {{ profile.full_name }} knows who downloaded it. Never shared, never added to a mailing list.
+                        See the <a href="{% url 'core:privacy' %}">privacy page</a>.
+                    </p>
+                    {% for error in form.email.errors %}<p class="field-error"
+   id="email-error">{{ error }}</p>{% endfor %}
+                </div>
+                <p>
+                    <button class="btn btn--solid" type="submit">Download résumé</button>
+                </p>
+            </form>
+        {% else %}
+            <p class="lede">
+                The résumé isn’t available for download right now. Please <a href="{% url 'contact:contact' %}">get in touch</a> instead.
+            </p>
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% load static core_extras %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        {# same-origin, not no-referrer: no-referrer makes browsers send "Origin: null" on form posts, which fails CSRF. #}
+        <meta name="referrer" content="same-origin">
+        <title>Sign in · Studio</title>
+        <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    </head>
+    <body class="dash dash--auth">
+        <main class="auth-card">
+            <span class="dash-brand__mark dash-brand__mark--lg"
+                  aria-hidden="true">{{ profile.full_name|initials }}</span>
+            <h1>Studio</h1>
+            <p class="auth-card__sub">Private dashboard for {{ profile.full_name }}</p>
+            {% if error %}
+                <p class="dash-error" role="alert">{{ error }}</p>
+            {% endif %}
+            <form method="post" class="dash-form" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="field">
+                    <label for="{{ form.username.id_for_label }}">Username</label>
+                    {{ form.username }}
+                </div>
+                <div class="field">
+                    <label for="{{ form.password.id_for_label }}">Password</label>
+                    {{ form.password }}
+                </div>
+                {% if otp_required %}
+                    <div class="field">
+                        <label for="{{ form.otp_token.id_for_label }}">Authenticator code</label>
+                        {{ form.otp_token }}
+                        <p class="field__help">6-digit code from your authenticator app, or a backup code.</p>
+                    </div>
+                {% endif %}
+                <button class="dash-btn dash-btn--primary dash-btn--block" type="submit">Sign in</button>
+            </form>
+        </main>
+    </body>
+</html>

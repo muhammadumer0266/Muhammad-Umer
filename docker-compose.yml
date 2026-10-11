@@ -31,6 +31,9 @@ services:
     env_file: .env
     volumes:
       - media:/app/media
+      # Resumes: mounted into Django only, never into Caddy, so there is no
+      # public URL for them -- they're streamed after the email gate.
+      - private_media:/app/private_media
     depends_on:
       db:
         condition: service_healthy
@@ -79,6 +82,10 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    environment:
+      # Caddy gets its TLS certificate and host routing from this. Without it
+      # the Caddyfile falls back to "localhost" and the real domain 404s.
+      SITE_DOMAIN: ${SITE_DOMAIN:-muhammadumer.tech}
     ports:
       - "80:80"
       - "443:443"
@@ -93,3 +100,4 @@ volumes:
   pgdata:
   caddy_data:
   media:
+  private_media:

@@ -28,12 +28,13 @@ COPY --from=frontend /app/frontend/dist ./frontend/dist
 
 # prod settings fail fast without these, so collectstatic gets throwaway
 # values that exist only for this build step. Code stays root-owned and
-# read-only for the runtime user; only /app/media is writable by it.
+# read-only for the runtime user; only the two upload dirs are writable.
 RUN DJANGO_SECRET_KEY=collectstatic-only ALLOWED_HOSTS=localhost \
     CSRF_TRUSTED_ORIGINS=https://localhost \
     python manage.py collectstatic --noinput --settings=config.settings.prod \
-    && mkdir -p /app/media \
-    && chown -R app:app /app/media
+    && mkdir -p /app/media /app/private_media \
+    && chown -R app:app /app/media /app/private_media \
+    && chmod 700 /app/private_media
 
 USER app
 

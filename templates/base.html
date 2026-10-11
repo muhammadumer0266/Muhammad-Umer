@@ -1,4 +1,4 @@
-{% load static seo_extras %}
+{% load static core_extras seo_extras %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -17,35 +17,146 @@
                   content="{{ GOOGLE_SITE_VERIFICATION }}">
         {% endif %}
         {% if BING_SITE_VERIFICATION %}<meta name="msvalidate.01" content="{{ BING_SITE_VERIFICATION }}">{% endif %}
+        <meta name="author" content="{{ profile.full_name }}">
+        <meta name="theme-color" content="#0d0910">
+        {# Link previews (LinkedIn, WhatsApp, X, Slack...) and a strong image signal for search. #}
+        <meta property="og:site_name" content="{{ SITE_NAME }}">
+        <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+        <meta property="og:url" content="{{ CANONICAL_URL }}">
+        <meta property="og:title" content="{{ page_title|default:SITE_NAME }}">
+        <meta property="og:description"
+              content="{{ page_description|default:'Django developer and AI engineer.' }}">
+        <meta property="og:locale" content="en_US">
+        {% block og_image %}
+            {% if profile.photo %}
+                <meta property="og:image" content="{{ profile.photo.url|absolute_url }}">
+                <meta property="og:image:alt" content="Photo of {{ profile.full_name }}">
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:image" content="{{ profile.photo.url|absolute_url }}">
+            {% else %}
+                <meta name="twitter:card" content="summary">
+            {% endif %}
+        {% endblock %}
+        <meta name="twitter:title" content="{{ page_title|default:SITE_NAME }}">
+        <meta name="twitter:description"
+              content="{{ page_description|default:'Django developer and AI engineer.' }}">
+        <link rel="preload"
+              href="{% static 'fonts/bodoni-moda-latin.woff2' %}"
+              as="font"
+              type="font/woff2"
+              crossorigin>
         <link rel="stylesheet" href="{% static 'css/app.css' %}">
         {% block extra_head %}{% endblock %}
         <script src="{% static 'js/htmx.min.js' %}" defer></script>
         <script type="module" src="{% static 'js/main.js' %}" defer></script>
+        <script type="module" src="{% static 'js/nav.js' %}" defer></script>
         {% site_jsonld profile social_links %}
     </head>
     <body>
         <a class="skip-link" href="#main">Skip to content</a>
         <canvas id="gl" aria-hidden="true"></canvas>
-        <header class="site-header">
-            <div class="site-header__inner">
-                <a class="site-header__name" href="{% url 'portfolio:home' %}">{{ profile.full_name }}</a>
-                <nav class="site-nav" aria-label="Primary">
+        <header class="site-header" data-site-header>
+            {# Decorative layers (liquid indicator, spotlight, scroll thread) are added by static/js/nav.js; without JS this is a complete, plain navbar. #}
+            <div class="site-header__capsule" data-capsule>
+                <a class="brand" href="{% url 'portfolio:home' %}">
+                    <span class="brand__mark" aria-hidden="true"><span>{{ profile.full_name|initials }}</span></span>
+                    <span class="brand__text">
+                        <span class="brand__name">{{ profile.full_name }}</span>
+                        {% if profile.available_for_work %}
+                            <span class="brand__status"><span class="brand__pulse"
+      aria-hidden="true">●</span> Open to work</span>
+                        {% endif %}
+                    </span>
+                </a>
+                {# Desktop: inline links. Hidden (display:none, so also from screen readers) below 68rem. #}
+                <nav class="site-nav" aria-label="Primary" data-site-nav>
                     <ul>
                         {% for item in nav_items %}
-                            <li>
-                                <a href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a>
-                            </li>
+                            {% if not item.cta %}
+                                <li>
+                                    <a href="{{ item.url }}"
+                                       {% if item.current %} aria-current="page"{% endif %}>
+                                        <span class="roll"
+                                              data-label="{{ item.label }}"><span>{{ item.label }}</span></span>
+                                    </a>
+                                </li>
+                            {% endif %}
                         {% endfor %}
                     </ul>
                 </nav>
-                {# Hidden until main.js runs: without JS there's no sound to toggle. #}
-                <button type="button"
-                        id="sound-toggle"
-                        class="btn sound-toggle"
-                        aria-pressed="false"
-                        hidden>
-                    <span data-sound-label>Sound off</span>
-                </button>
+                <div class="site-header__actions">
+                    {% if has_resume %}
+                        <a class="icon-btn"
+                           href="{% url 'portfolio:resume' %}"
+                           title="Download résumé">
+                            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                                <path d="M8 2.5v7.5M4.75 7l3.25 3.25L11.25 7M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="visually-hidden">Download résumé</span>
+                        </a>
+                    {% endif %}
+                    {# Hidden until main.js runs: without JS there's no sound to toggle. #}
+                    <button type="button"
+                            id="sound-toggle"
+                            class="icon-btn sound-toggle"
+                            aria-pressed="false"
+                            title="Toggle ambient sound"
+                            hidden>
+                        <svg class="sound-toggle__bars"
+                             viewBox="0 0 14 12"
+                             width="14"
+                             height="12"
+                             aria-hidden="true">
+                            <rect x="0" y="0" width="2" height="12" rx="1" /><rect x="4" y="0" width="2" height="12" rx="1" /><rect x="8" y="0" width="2" height="12" rx="1" /><rect x="12" y="0" width="2" height="12" rx="1" />
+                        </svg>
+                        <span class="visually-hidden" data-sound-label>Sound off</span>
+                    </button>
+                    {% for item in nav_items %}
+                        {% if item.cta %}
+                            <a class="nav-cta"
+                               href="{{ item.url }}"
+                               data-magnetic
+                               {% if item.current %} aria-current="page"{% endif %}>
+                                <span class="roll" data-label="Let’s talk"><span>Let’s talk</span></span>
+                                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                                    <path d="M4.5 11.5l7-7M6 4.5h5.5V10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    {# Mobile menu. <details> opens and closes with no JS at all; nav.js adds Escape/close-on-navigate. #}
+                    <details class="nav-drawer" data-nav-drawer>
+                        <summary class="nav-drawer__toggle" aria-label="Menu">
+                            <span class="nav-drawer__icon" aria-hidden="true"></span>
+                        </summary>
+                        <div class="nav-drawer__panel">
+                            <nav aria-label="Primary">
+                                <ol>
+                                    {% for item in nav_items %}
+                                        <li>
+                                            <a href="{{ item.url }}"
+                                               {% if item.current %} aria-current="page"{% endif %}>
+                                                <span class="nav-drawer__num"
+                                                      aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+                                                <span class="nav-drawer__label">{{ item.label }}</span>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+                            </nav>
+                            <div class="nav-drawer__foot">
+                                <p>{{ profile.headline|default:"Django developer · AI engineer" }}</p>
+                                <p class="nav-drawer__links">
+                                    {% if has_resume %}<a href="{% url 'portfolio:resume' %}">Résumé ↓</a>{% endif %}
+                                    {% for link in social_links %}
+                                        <a href="{{ link.url }}"
+                                           {% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
+                                    {% endfor %}
+                                </p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
             </div>
         </header>
         <main id="main" class="scrim" tabindex="-1">
@@ -64,7 +175,8 @@
                 <ul>
                     {% for link in social_links %}
                         <li>
-                            <a href="{{ link.url }}"{% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
+                            <a href="{{ link.url }}"
+                               {% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
                         </li>
                     {% endfor %}
                     <li><a href="{% url 'core:privacy' %}">Privacy</a></li>

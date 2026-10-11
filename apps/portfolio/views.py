@@ -18,6 +18,11 @@ def home(request: HttpRequest) -> HttpResponse:
             if selectors.has_published_certifications()
             else []
         ),
+        "home_photos": (
+            selectors.published_photos().filter(show_on_home=True)[:4]
+            if selectors.has_published_photos()
+            else []
+        ),
         "page_title": f"{profile.full_name} | {profile.headline or 'Django & AI Engineer'}",
         "page_description": profile.bio_short
         or (
@@ -115,3 +120,16 @@ def certifications(request: HttpRequest) -> HttpResponse:
         ),
     }
     return render(request, "pages/certifications.html", context)
+
+
+def photos(request: HttpRequest) -> HttpResponse:
+    name = _name(request)
+    context = {
+        "photos": selectors.published_photos(),
+        "page_title": f"Photos | {name}",
+        "page_description": (
+            f"Photos of {name}, Django developer and AI engineer: talks, events, "
+            "work and portraits."
+        ),
+    }
+    return render(request, "pages/photos.html", context)

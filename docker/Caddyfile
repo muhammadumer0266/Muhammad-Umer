@@ -26,13 +26,18 @@
 		root * /srv/media
 		@pdf path *.pdf
 		@notpdf not path *.pdf
+		# Photos must stay indexable (Google Images); documents (resume,
+		# certificate PDFs) are reachable from the site but kept out of search.
 		header @pdf Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		header @pdf X-Robots-Tag "noindex"
+		header @pdf Cross-Origin-Resource-Policy "same-origin"
 		header @notpdf Content-Security-Policy "default-src 'none'; img-src 'self'; frame-ancestors 'none'; sandbox"
+		# Image search result previews load the original image from this
+		# origin, so photos must allow cross-origin embedding.
+		header @notpdf Cross-Origin-Resource-Policy "cross-origin"
 		header {
 			X-Content-Type-Options "nosniff"
-			Cross-Origin-Resource-Policy "same-origin"
 			Cache-Control "public, max-age=86400"
-			X-Robots-Tag "noindex"
 		}
 		file_server
 	}

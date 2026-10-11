@@ -1,0 +1,111 @@
+{% extends "dashboard/base.html" %}
+{% block title %}{{ section.label }}{% endblock %}
+{% block content %}
+    <header class="dash-head">
+        <div>
+            <p class="dash-eyebrow">{{ section.group }}</p>
+            <h1>{{ section.label }}</h1>
+            {% if section.description %}<p class="dash-sub">{{ section.description }}</p>{% endif %}
+        </div>
+        <div class="dash-actions">
+            {% if section.extra.export %}<a class="dash-btn"
+   href="{% url section.extra.export %}">Export CSV</a>{% endif %}
+            {% if section.can_add %}
+                <a class="dash-btn dash-btn--primary"
+                   href="{% url 'dashboard:create' section.slug %}">Add {{ section.singular }}</a>
+            {% endif %}
+        </div>
+    </header>
+    {% if section.search %}
+        <form class="dash-search" method="get" role="search">
+            <label class="visually-hidden" for="q">Search {{ section.label|lower }}</label>
+            <input id="q"
+                   type="search"
+                   name="q"
+                   value="{{ query }}"
+                   placeholder="Search {{ section.label|lower }}…">
+            <button class="dash-btn" type="submit">Search</button>
+            {% if query %}<a class="dash-link" href="{% url 'dashboard:list' section.slug %}">Clear</a>{% endif %}
+        </form>
+    {% endif %}
+    {% if rows %}
+        <div class="table-wrap">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        {% for column in section.columns %}<th scope="col">{{ column.label }}</th>{% endfor %}
+                        <th scope="col">
+                            <span class="visually-hidden">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            {% for cell in row.cells %}
+                                <td data-kind="{{ cell.kind }}">
+                                    {% if cell.kind == "bool" %}
+                                        <span class="pill {% if cell.value %}pill--yes{% else %}pill--no{% endif %}">{{ cell.value|yesno:"Yes,No" }}</span>
+                                    {% elif cell.kind == "image" %}
+                                        {% if cell.value %}
+                                            <img class="thumb" src="{{ cell.value.url }}" alt="" loading="lazy">
+                                        {% else %}
+                                            <span class="muted">—</span>
+                                        {% endif %}
+                                    {% elif cell.kind == "badge" %}
+                                        <span class="pill">{{ cell.value }}</span>
+                                    {% elif cell.kind == "date" %}
+                                        {{ cell.value|date:"M Y"|default:"—" }}
+                                    {% elif cell.kind == "datetime" %}
+                                        {{ cell.value|date:"j M Y, H:i" }}
+                                    {% elif forloop.first and row.url %}
+                                        <a class="row-link" href="{{ row.url }}">{{ cell.value|truncatechars:70 }}</a>
+                                    {% else %}
+                                        {{ cell.value|default_if_none:""|truncatechars:70 }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                            <td class="row-actions">
+                                {% if row.url %}<a class="dash-link" href="{{ row.url }}">{% if section.can_edit %}Edit{% else %}Open{% endif %}</a>{% endif %}
+                                {% if section.slug == "resumes" %}
+                                    <a class="dash-link" href="{% url 'dashboard:resume_file' row.obj.pk %}">Preview</a>
+                                {% endif %}
+                                {% if section.can_delete %}
+                                    <a class="dash-link dash-link--danger"
+                                       href="{% url 'dashboard:delete' section.slug row.obj.pk %}">Delete</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if page.has_other_pages %}
+            <nav class="pager" aria-label="Pages">
+                {% if page.has_previous %}
+                    <a class="dash-link"
+                       href="?page={{ page.previous_page_number }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">← Newer</a>
+                {% endif %}
+                <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+                {% if page.has_next %}
+                    <a class="dash-link"
+                       href="?page={{ page.next_page_number }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">Older →</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="empty">
+            <p>
+                {% if query %}
+                    Nothing matches “{{ query }}”.
+                {% else %}
+                    No {{ section.label|lower }} yet.
+                {% endif %}
+            </p>
+            {% if section.can_add and not query %}
+                <a class="dash-btn dash-btn--primary"
+                   href="{% url 'dashboard:create' section.slug %}">Add the first {{ section.singular }}</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

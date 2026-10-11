@@ -1,0 +1,31 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Message from {{ message.name }}{% endblock %}
+{% block content %}
+    <header class="dash-head">
+        <div>
+            <p class="dash-eyebrow">
+                <a class="dash-link" href="{% url 'dashboard:list' 'messages' %}">← Messages</a>
+            </p>
+            <h1>{{ message.name }}</h1>
+            <p class="dash-sub">
+                <a class="dash-link"
+                   href="mailto:{{ message.email }}">{{ message.email }}</a> · {{ message.created_at|date:"j M Y, H:i" }}
+            </p>
+        </div>
+        <div class="dash-actions">
+            <a class="dash-btn dash-btn--primary" href="mailto:{{ message.email }}">Reply by email</a>
+        </div>
+    </header>
+    <article class="panel message-body">{{ message.message|linebreaksbr }}</article>
+    <form method="post" class="panel form-actions">
+        {% csrf_token %}
+        <span class="muted">Status: <span class="pill">{{ message.get_status_display }}</span></span>
+        {% for value, label in statuses %}
+            {% if value != message.status %}
+                <button class="dash-btn" type="submit" name="status" value="{{ value }}">Mark {{ label|lower }}</button>
+            {% endif %}
+        {% endfor %}
+        <a class="dash-link dash-link--danger"
+           href="{% url 'dashboard:delete' 'messages' message.pk %}">Delete</a>
+    </form>
+{% endblock %}

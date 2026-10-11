@@ -3,6 +3,14 @@
 {% block description %}{{ page_description }}{% endblock %}
 {% block content %}
     <section id="hero" class="hero rv">
+        {% if profile.photo %}
+            <img class="hero__portrait"
+                 src="{{ profile.photo.url }}"
+                 alt="Portrait of {{ profile.full_name }}"
+                 width="112"
+                 height="112"
+                 fetchpriority="high">
+        {% endif %}
         <span class="label">{{ profile.headline|default:"Django developer · AI engineer" }}</span>
         <h1>{{ profile.full_name }}</h1>
         <p class="lede">
@@ -22,6 +30,7 @@
         <p class="btn-row">
             <a class="btn btn--solid" href="{% url 'portfolio:work_list' %}">See the work</a>
             <a class="btn" href="{% url 'contact:contact' %}">Get in touch</a>
+            {% if has_resume %}<a class="btn btn--ghost" href="{% url 'portfolio:resume' %}">Résumé</a>{% endif %}
         </p>
     </section>
     <section aria-labelledby="featured-heading" class="rv">
@@ -52,6 +61,26 @@
             <p>No featured work published yet — check back soon.</p>
         {% endif %}
     </section>
+    {% if home_photos %}
+        <section aria-labelledby="photos-heading" class="rv">
+            <h2 id="photos-heading">Photos</h2>
+            <div class="photo-strip">
+                {% for photo in home_photos %}
+                    <a href="{% url 'portfolio:photos' %}">
+                        <img src="{{ photo.image.url }}"
+                             alt="{{ photo.alt_text }}"
+                             width="{{ photo.width }}"
+                             height="{{ photo.height }}"
+                             loading="lazy"
+                             decoding="async">
+                    </a>
+                {% endfor %}
+            </div>
+            <p>
+                <a href="{% url 'portfolio:photos' %}">All photos →</a>
+            </p>
+        </section>
+    {% endif %}
     {% if certifications %}
         <section aria-labelledby="certifications-heading" class="rv">
             <h2 id="certifications-heading">Certifications</h2>

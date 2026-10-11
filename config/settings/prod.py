@@ -4,6 +4,9 @@ from .base import env
 DEBUG = False
 
 SECRET_KEY = env.str("DJANGO_SECRET_KEY")  # fails fast if missing
+# The one canonical origin: drives canonical tags, sitemaps, JSON-LD, Open
+# Graph URLs and the www/other-host -> canonical redirect.
+SITE_URL = env.str("SITE_URL", default="https://muhammadumer.tech")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")  # fails fast if missing
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")  # fails fast if missing
 

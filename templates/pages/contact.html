@@ -47,7 +47,9 @@
             <ul class="chip-row">
                 {% for link in social_links %}
                     <li>
-                        <a class="chip" href="{{ link.url }}"{% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
+                        <a class="chip"
+                           href="{{ link.url }}"
+                           {% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
                     </li>
                 {% endfor %}
             </ul>

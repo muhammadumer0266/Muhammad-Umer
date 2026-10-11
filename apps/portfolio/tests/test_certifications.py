@@ -88,32 +88,35 @@ def test_certifications_api_lists_published_only(client):
     assert [c["title"] for c in data] == ["Public"]
 
 
-@pytest.mark.django_db
-def test_certification_admin_changelist_and_add_load(client, django_user_model):
-    admin = django_user_model.objects.create_superuser("admin", "a@example.com", "x")
-    client.force_login(admin)
-    _cert()
-
-    assert client.get(reverse("admin:portfolio_certification_changelist")).status_code == 200
-    assert client.get(reverse("admin:portfolio_certification_add")).status_code == 200
-
-
 # --- dynamic content / UI consistency ---------------------------------------
 
 
 @pytest.mark.django_db
 def test_nav_marks_current_section(client):
+    import re
+
     html = client.get(reverse("portfolio:work_list")).content.decode()
 
-    assert 'href="/work/" aria-current="page"' in html
-    assert 'href="/" aria-current="page"' not in html
+    current = re.findall(r'href="([^"]+)"\s+aria-current="page"', html)
+    assert current
+    assert set(current) == {"/work/"}
+
+
+@pytest.mark.django_db
+def test_header_has_monogram_cta_and_no_js_mobile_menu(client):
+    html = client.get(reverse("portfolio:home")).content.decode()
+
+    assert '<span class="brand__mark" aria-hidden="true"><span>MU</span></span>' in html
+    assert 'class="nav-cta"' in html
+    assert '<details class="nav-drawer"' in html
 
 
 @pytest.mark.django_db
 def test_sound_toggle_is_hidden_until_js_runs(client):
     html = client.get(reverse("portfolio:home")).content.decode()
 
-    toggle = html[html.index('id="sound-toggle"') :][:200]
+    start = html.index('id="sound-toggle"')
+    toggle = html[start : html.index(">", start)]
     assert "hidden" in toggle
 
 

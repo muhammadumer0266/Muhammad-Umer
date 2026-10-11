@@ -29,6 +29,7 @@ CRITICAL_PATH_FILES = [
     "css/app.css",
     "js/htmx.min.js",
     "js/main.js",
+    "js/nav.js",
     "js/tilt.js",
     "js/reveal.js",
 ]

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    <meta name="robots" content="noindex">
+    {# Starts the download without JavaScript. H052 targets timers that navigate away; this one only fetches an attachment, so the visitor stays on this page. #}
+    {# djlint:off H052 #}
+    <meta http-equiv="refresh" content="1;url={{ download_url }}">
+    {# djlint:on #}
+{% endblock %}
+{% block content %}
+    <section class="resume-gate" aria-live="polite">
+        <span class="label">Résumé</span>
+        <h1>Thank you — your download is starting</h1>
+        <p class="lede">If it doesn’t start in a moment, use the button below. The link works for 15 minutes.</p>
+        <p class="btn-row">
+            <a class="btn btn--solid" href="{{ download_url }}">Download résumé (PDF)</a>
+            <a class="btn" href="{% url 'contact:contact' %}">Get in touch</a>
+        </p>
+    </section>
+{% endblock %}

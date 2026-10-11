@@ -8,7 +8,9 @@
 
 - [Home]({{ SITE_URL }}/)
 - [Work]({{ SITE_URL }}/work/) -- projects, milestones and what's being built, in order
-- [About]({{ SITE_URL }}/about/) -- who Muhammad Umer is and the stack behind this site
+- [About]({{ SITE_URL }}/about/) -- who {{ profile.full_name }} is and the stack behind this site
+- [Certifications]({{ SITE_URL }}/certifications/) -- credentials, with issuer verification links
+- [Photos]({{ SITE_URL }}/photos/) -- photos of {{ profile.full_name }}
 - [Contact]({{ SITE_URL }}/contact/)
 
 ## Notes for automated readers

@@ -2,6 +2,7 @@ import structlog
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
+from django.urls import reverse
 
 from .models import ContactMessage
 
@@ -25,8 +26,8 @@ def send_contact_notification(self, message_id: int) -> None:
             subject=f"New contact message from {message.name}",
             message=(
                 f"From: {message.name} <{message.email}>\n\n{message.message}\n\n"
-                f"Manage: {settings.SITE_URL}/{settings.ADMIN_URL}contact/contactmessage/"
-                f"{message.pk}/change/"
+                f"Open: {settings.SITE_URL}"
+                f"{reverse('dashboard:message_detail', args=[message.pk])}"
             ),
             from_email=None,
             recipient_list=[settings.CONTACT_EMAIL],

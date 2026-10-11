@@ -20,7 +20,7 @@ answering before the design-system milestone starts writing real page copy.
 
 ## Domain & deployment
 - [x] Deploy target: VPS + Docker Compose + Caddy (decided 2026-09-30).
-- [ ] Domain name, once purchased (site is built domain-agnostic via `SITE_URL` until then — decided 2026-09-30).
+- [x] Domain: **muhammadumer.tech** (purchased 2026-10). Production defaults `SITE_URL` to it; follow the "Go-live for search" steps in `docs/SEO.md`.
 - [ ] Registrar/DNS provider, once domain is bought.
 
 ## AI "Ask" feature
@@ -40,6 +40,8 @@ answering before the design-system milestone starts writing real page copy.
 - [ ] `DEFAULT_FROM_EMAIL` is Django's default (`webmaster@localhost`) -- set a real sending address once a domain/mailbox exists.
 
 ## Hardening & launch (M9)
+- [ ] **Create your dashboard login**: `python manage.py createsuperuser` on the server, then sign in at `https://muhammadumer.tech/<ADMIN_URL>`.
+- [ ] **Upload your résumé** in Dashboard → Résumés (PDF). Until one is active, the site hides every résumé link.
 - [ ] **Enroll your admin in 2FA before the first production deploy.** django-otp is wired up and `ADMIN_REQUIRE_OTP` defaults to `True` in production: without an enrolled device the admin login will refuse you. On the server run `python manage.py enroll_admin_otp <username>`, scan the QR, confirm a code, and store the 10 backup codes offline. Lost phone: `enroll_admin_otp <username> --reset`. See `docs/SECURITY.md`.
 - [ ] Optional: set `ADMIN_ALLOWED_IPS` (your home/VPN IPs or CIDRs) so the admin returns 404 to everyone else.
 - [ ] Set `POSTGRES_PASSWORD` in the server `.env` (docker-compose now refuses to start without it; it used to default to `portfolio`).

@@ -32,9 +32,9 @@
                     {% endif %}
                 </p>
             {% endif %}
-            {% if profile.resume_pdf %}
+            {% if has_resume %}
                 <p>
-                    <a class="btn" href="{{ profile.resume_pdf.url }}" rel="noopener">Download résumé (PDF)</a>
+                    <a class="btn" href="{% url 'portfolio:resume' %}">Download résumé</a>
                 </p>
             {% endif %}
         </div>

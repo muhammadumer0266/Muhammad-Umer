@@ -47,7 +47,7 @@ def test_client_ip_falls_back_on_garbage_header():
 @pytest.mark.django_db
 @override_settings(ADMIN_ALLOWED_IPS=["192.0.2.0/24"])
 def test_admin_is_hidden_from_non_allowlisted_ips(client):
-    response = client.get(reverse("admin:login"), REMOTE_ADDR="198.51.100.1")
+    response = client.get(reverse("dashboard:login"), REMOTE_ADDR="198.51.100.1")
 
     assert response.status_code == 404
 
@@ -55,7 +55,7 @@ def test_admin_is_hidden_from_non_allowlisted_ips(client):
 @pytest.mark.django_db
 @override_settings(ADMIN_ALLOWED_IPS=["192.0.2.0/24"])
 def test_admin_is_reachable_from_allowlisted_ip_and_never_cached(client):
-    response = client.get(reverse("admin:login"), REMOTE_ADDR="192.0.2.10")
+    response = client.get(reverse("dashboard:login"), REMOTE_ADDR="192.0.2.10")
 
     assert response.status_code == 200
     assert response["Cache-Control"] == "no-store, private"
@@ -65,7 +65,7 @@ def test_admin_is_reachable_from_allowlisted_ip_and_never_cached(client):
 @override_settings(ADMIN_ALLOWED_IPS=["192.0.2.0/24"], TRUSTED_PROXY_COUNT=1)
 def test_admin_allowlist_cannot_be_bypassed_with_forged_forwarded_for(client):
     response = client.get(
-        reverse("admin:login"),
+        reverse("dashboard:login"),
         REMOTE_ADDR="172.18.0.3",
         HTTP_X_FORWARDED_FOR="192.0.2.10, 198.51.100.1",
     )
@@ -173,20 +173,35 @@ def test_enroll_admin_otp_refuses_non_staff(django_user_model):
 
 
 @pytest.mark.django_db
-def test_otp_admin_site_requires_token_field_and_verified_user(client, django_user_model):
-    """What ADMIN_REQUIRE_OTP does in config/urls.py, exercised directly."""
-    from django.contrib import admin
-    from django_otp.admin import OTPAdminSite
+@override_settings(ADMIN_REQUIRE_OTP=True)
+def test_dashboard_requires_otp_token_and_verified_session(client, django_user_model):
+    login_page = client.get(reverse("dashboard:login"))
+    staff = django_user_model.objects.create_superuser("boss", "b@example.com", "x")
 
-    original = admin.site.__class__
-    admin.site.__class__ = OTPAdminSite
-    try:
-        login_page = client.get(reverse("admin:login"))
-        staff = django_user_model.objects.create_superuser("boss", "b@example.com", "x")
-        client.force_login(staff)  # password only, no OTP device verified
-        index = client.get(reverse("admin:index"))
-    finally:
-        admin.site.__class__ = original
+    # Right password, no code: refused.
+    no_code = client.post(reverse("dashboard:login"), {"username": "boss", "password": "x"})
+    # A session that skipped OTP (e.g. a password-only login) gets bounced.
+    client.force_login(staff)
+    overview = client.get(reverse("dashboard:overview"))
 
     assert b'name="otp_token"' in login_page.content
-    assert index.status_code == 302  # bounced back to login
+    assert no_code.status_code == 400
+    assert overview.status_code == 302
+    assert overview["Location"].startswith(reverse("dashboard:login"))
+
+
+@pytest.mark.django_db
+@override_settings(ADMIN_REQUIRE_OTP=True)
+def test_dashboard_login_with_valid_totp_succeeds(client, django_user_model, monkeypatch):
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+
+    staff = django_user_model.objects.create_superuser("boss", "b@example.com", "x")
+    TOTPDevice.objects.create(user=staff, name="phone", confirmed=True)
+    monkeypatch.setattr(TOTPDevice, "verify_token", lambda self, code: code == "123456")
+
+    response = client.post(
+        reverse("dashboard:login"), {"username": "boss", "password": "x", "otp_token": "123456"}
+    )
+
+    assert response.status_code == 302
+    assert client.get(reverse("dashboard:overview")).status_code == 200

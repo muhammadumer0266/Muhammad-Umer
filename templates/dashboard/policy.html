@@ -1,0 +1,32 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guardrail policy{% endblock %}
+{% block content %}
+    <header class="dash-head">
+        <div>
+            <p class="dash-eyebrow">Ask AI</p>
+            <h1>Guardrail policy</h1>
+            <p class="dash-sub">Tunes the built-in protections (which are always on). Changes apply to the very next question.</p>
+        </div>
+        <form method="post"
+              action="{% url 'dashboard:reindex' %}"
+              class="dash-actions">
+            {% csrf_token %}
+            <button class="dash-btn" type="submit">Rebuild Ask index ({{ indexed_documents }} docs)</button>
+        </form>
+    </header>
+    {% if form.errors %}
+        <p class="dash-error" role="alert">Please fix the highlighted fields below.</p>
+    {% endif %}
+    <form class="dash-form panel" method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in form %}
+                {% include "dashboard/_field.html" %}
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button class="dash-btn dash-btn--primary" type="submit">Save policy</button>
+            <a class="dash-link" href="{% url 'dashboard:list' 'guardrail-rules' %}">Manage custom rules →</a>
+        </div>
+    </form>
+{% endblock %}

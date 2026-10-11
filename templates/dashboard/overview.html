@@ -1,0 +1,98 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+    <header class="dash-head">
+        <div>
+            <p class="dash-eyebrow">Welcome back</p>
+            <h1>{{ profile.full_name }}</h1>
+            <p class="dash-sub">{{ profile.headline|default:"Add a headline in Profile & summary." }}</p>
+        </div>
+        <div class="dash-actions">
+            <a class="dash-btn" href="{% url 'dashboard:profile' %}">Edit profile</a>
+            <a class="dash-btn dash-btn--primary"
+               href="{% url 'dashboard:create' 'work' %}">New project</a>
+        </div>
+    </header>
+    <section class="stat-grid" aria-label="At a glance">
+        {% for label, value, slug in stats %}
+            <a class="stat" href="{% url 'dashboard:list' slug %}">
+                <span class="stat__value">{{ value }}</span>
+                <span class="stat__label">{{ label }}</span>
+            </a>
+        {% endfor %}
+    </section>
+    <section class="dash-grid">
+        <div class="panel">
+            <h2>Quick actions</h2>
+            <ul class="quick">
+                <li>
+                    <a href="{% url 'dashboard:create' 'certifications' %}">Upload a certification</a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard:create' 'photos' %}">Upload a photo</a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard:create' 'resumes' %}">Upload a new résumé</a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard:create' 'skills' %}">Add a skill</a>
+                </li>
+                <li>
+                    <a href="{% url 'dashboard:policy' %}">Tune the Ask AI guardrails</a>
+                </li>
+            </ul>
+        </div>
+        <div class="panel">
+            <h2>Launch checklist</h2>
+            <ul class="checklist">
+                {% for label, done, url in checklist %}
+                    <li class="{% if done %}is-done{% endif %}">
+                        <span class="checklist__mark" aria-hidden="true">{% if done %}✓{% else %}·{% endif %}</span>
+                        {% if done %}
+                            {{ label }}
+                        {% else %}
+                            <a href="{{ url }}">{{ label }}</a>
+                        {% endif %}
+                        <span class="visually-hidden">{% if done %}(done){% else %}(to do){% endif %}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="panel">
+            <h2>Latest messages</h2>
+            {% if recent_messages %}
+                <ul class="feed">
+                    {% for m in recent_messages %}
+                        <li>
+                            <a href="{% url 'dashboard:message_detail' m.pk %}">
+                                <strong>{{ m.name }}</strong>
+                                {% if m.status == "new" %}<span class="pill pill--new">new</span>{% endif %}
+                                <span class="feed__meta">{{ m.created_at|timesince }} ago</span>
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="muted">No messages yet.</p>
+            {% endif %}
+        </div>
+        <div class="panel">
+            <h2>Latest résumé requests</h2>
+            {% if recent_requests %}
+                <ul class="feed">
+                    {% for r in recent_requests %}
+                        <li>
+                            <span><strong>{{ r.email }}</strong>
+                                <span class="feed__meta">{{ r.created_at|timesince }} ago</span></span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p>
+                    <a class="dash-link" href="{% url 'dashboard:list' 'resume-requests' %}">All requests →</a>
+                </p>
+            {% else %}
+                <p class="muted">No downloads yet.</p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

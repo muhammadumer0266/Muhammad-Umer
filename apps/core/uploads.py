@@ -114,3 +114,37 @@ class RandomFilename:
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RandomFilename) and other.folder == self.folder
+
+
+@deconstructible
+class SeoFilename:
+    """upload_to callable for photos that should rank in image search.
+
+    Google uses the file name as a (weak) relevance signal, so instead of a
+    bare UUID this produces e.g. ``photos/muhammad-umer-pycon-talk-3f9a1c.jpg``:
+    owner's name + the photo's title, plus a short random suffix so names
+    never collide and the original filename still never reaches disk.
+    """
+
+    def __init__(self, folder: str, title_field: str = "") -> None:
+        self.folder = folder.strip("/")
+        self.title_field = title_field
+
+    def __call__(self, instance, filename: str) -> str:
+        from django.utils.text import slugify
+
+        from apps.portfolio.models import Profile
+
+        extension = PurePath(filename).suffix.lower()
+        parts = [slugify(Profile.get_solo().full_name)]
+        if self.title_field:
+            parts.append(slugify(getattr(instance, self.title_field, "") or "")[:60])
+        stem = "-".join(p for p in parts if p) or "photo"
+        return f"{self.folder}/{stem}-{uuid.uuid4().hex[:6]}{extension}"
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, SeoFilename)
+            and other.folder == self.folder
+            and other.title_field == self.title_field
+        )

@@ -1,0 +1,17 @@
+{% load dashboard_extras %}
+<div class="field{% if field.errors %} field--error{% endif %}{% if field|is_checkbox %} field--check{% endif %}{% if field|is_wide %} field--wide{% endif %}">
+    {% if field|is_checkbox %}
+        <label class="check">
+            {{ field }}
+            <span>{{ field.label }}</span>
+        </label>
+    {% else %}
+        <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if not field.field.required %}<span class="field__optional">optional</span>{% endif %}
+        </label>
+        {{ field }}
+    {% endif %}
+    {% if field.help_text %}<p class="field__help">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+</div>

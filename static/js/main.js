@@ -18,6 +18,8 @@ document.body.addEventListener("htmx:afterSettle", () => {
   });
 });
 
+// The navbar (scroll state, liquid indicator, phone menu) lives in nav.js.
+
 function wireSoundToggle(button) {
   if (!button) return;
   // Server-rendered hidden: without JS there is no audio to toggle.

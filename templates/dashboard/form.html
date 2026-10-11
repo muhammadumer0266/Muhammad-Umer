@@ -1,0 +1,66 @@
+{% extends "dashboard/base.html" %}
+{% load core_extras %}
+{% block title %}
+    {% if object %}
+        Edit {{ section.singular }}
+    {% else %}
+        New {{ section.singular }}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <header class="dash-head">
+        <div>
+            <p class="dash-eyebrow">
+                <a class="dash-link" href="{% url 'dashboard:list' section.slug %}">← {{ section.label }}</a>
+            </p>
+            <h1>
+                {% if object %}
+                    {{ object }}
+                {% else %}
+                    New {{ section.singular }}
+                {% endif %}
+            </h1>
+            {% if section.description %}<p class="dash-sub">{{ section.description }}</p>{% endif %}
+        </div>
+        {% if object and section.can_delete %}
+            <div class="dash-actions">
+                <a class="dash-btn dash-btn--danger"
+                   href="{% url 'dashboard:delete' section.slug object.pk %}">Delete</a>
+            </div>
+        {% endif %}
+    </header>
+    {% if form.errors %}
+        <p class="dash-error" role="alert">Please fix the highlighted fields below.</p>
+    {% endif %}
+    <form class="dash-form panel"
+          method="post"
+          enctype="multipart/form-data"
+          novalidate>
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}<p class="dash-error">{{ error }}</p>{% endfor %}
+        {% if section.slug == "resumes" and object %}
+            <p class="field__help">
+                Current file: <a class="dash-link" href="{% url 'dashboard:resume_file' object.pk %}">preview</a>
+                · downloaded {{ object.download_count }} time{{ object.download_count|pluralize }}. Upload a new PDF to replace it.
+            </p>
+        {% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+                {% include "dashboard/_field.html" %}
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button class="dash-btn dash-btn--primary" type="submit">Save</button>
+            {% if section.can_add %}
+                <button class="dash-btn" type="submit" name="save_add" value="1">Save &amp; add another</button>
+            {% endif %}
+            <a class="dash-link" href="{% url 'dashboard:list' section.slug %}">Cancel</a>
+        </div>
+    </form>
+    {% if object.body_md %}
+        <section class="panel preview">
+            <h2>Case study preview</h2>
+            <div class="prose">{{ object.body_md|markdown }}</div>
+        </section>
+    {% endif %}
+{% endblock %}

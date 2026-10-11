@@ -3,7 +3,7 @@ from django.http import HttpRequest
 from django.urls import reverse
 
 from .models import Profile, SocialLink
-from .selectors import get_profile, has_published_certifications
+from .selectors import get_profile, nav_flags
 
 
 def profile_context(request: HttpRequest) -> dict[str, Profile | QuerySet[SocialLink]]:
@@ -25,8 +25,11 @@ def navigation(request: HttpRequest) -> dict[str, list[dict[str, object]]]:
         ("Work", reverse("portfolio:work_list")),
         ("About", reverse("portfolio:about")),
     ]
-    if has_published_certifications():
+    flags = nav_flags()
+    if flags["certifications"]:
         items.append(("Certifications", reverse("portfolio:certifications")))
+    if flags["photos"]:
+        items.append(("Photos", reverse("portfolio:photos")))
     items += [
         ("Ask", reverse("ai:ask")),
         ("Contact", reverse("contact:contact")),
@@ -38,5 +41,6 @@ def navigation(request: HttpRequest) -> dict[str, list[dict[str, object]]]:
         # Home only matches exactly; every other section also owns its subpaths
         # (e.g. /work/<slug>/ keeps "Work" current).
         current = path == url if url == "/" else path.startswith(url)
-        nav.append({"label": label, "url": url, "current": current})
-    return {"nav_items": nav}
+        # Contact renders as the header's call-to-action, not a plain link.
+        nav.append({"label": label, "url": url, "current": current, "cta": label == "Contact"})
+    return {"nav_items": nav, "has_resume": flags["resume"]}

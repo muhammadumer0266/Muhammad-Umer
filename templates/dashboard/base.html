@@ -1,0 +1,86 @@
+{% load static core_extras %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        {# same-origin, not no-referrer: no-referrer makes browsers send "Origin: null" on form posts, which fails CSRF. #}
+        <meta name="referrer" content="same-origin">
+        <title>{% block title %}Studio{% endblock %} · {{ profile.full_name }}</title>
+        <link rel="preload"
+              href="{% static 'fonts/bodoni-moda-latin.woff2' %}"
+              as="font"
+              type="font/woff2"
+              crossorigin>
+        <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    </head>
+    <body class="dash">
+        <a class="skip-link" href="#dash-main">Skip to content</a>
+        <aside class="dash-side">
+            <div class="dash-side__head">
+                <a class="dash-brand" href="{% url 'dashboard:overview' %}">
+                    <span class="dash-brand__mark" aria-hidden="true">{{ profile.full_name|initials }}</span>
+                    <span>
+                        <span class="dash-brand__name">Studio</span>
+                        <span class="dash-brand__sub">{{ profile.full_name }}</span>
+                    </span>
+                </a>
+            </div>
+            {# <details> gives a no-JS collapsible menu on phones; always open on desktop via CSS. #}
+            <details class="dash-nav" open>
+                <summary>Menu</summary>
+                <nav aria-label="Dashboard">
+                    <ul class="dash-nav__list">
+                        <li>
+                            <a href="{% url 'dashboard:overview' %}"
+                               {% if request.resolver_match.url_name == 'overview' %}aria-current="page"{% endif %}>Overview</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'dashboard:profile' %}"
+                               {% if active_section == 'profile' %}aria-current="page"{% endif %}>Profile &amp; summary</a>
+                        </li>
+                    </ul>
+                    {% for group, sections in nav_groups %}
+                        <p class="dash-nav__group">{{ group }}</p>
+                        <ul class="dash-nav__list">
+                            {% for s in sections %}
+                                <li>
+                                    <a href="{% url 'dashboard:list' s.slug %}"
+                                       {% if active_section == s.slug %}aria-current="page"{% endif %}>
+                                        {{ s.label }}
+                                        {% if s.slug == "messages" and unread_messages %}
+                                            <span class="dash-count"
+                                                  aria-label="{{ unread_messages }} unread">{{ unread_messages }}</span>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            {% if group == "Ask AI" %}
+                                <li>
+                                    <a href="{% url 'dashboard:policy' %}"
+                                       {% if active_section == 'policy' %}aria-current="page"{% endif %}>Guardrail policy</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    {% endfor %}
+                </nav>
+            </details>
+            <div class="dash-side__foot">
+                <a class="dash-link" href="{% url 'portfolio:home' %}">View site ↗</a>
+                <form method="post" action="{% url 'dashboard:logout' %}">
+                    {% csrf_token %}
+                    <button class="dash-link" type="submit">Sign out {{ request.user.get_username }}</button>
+                </form>
+            </div>
+        </aside>
+        <main id="dash-main" class="dash-main" tabindex="-1">
+            {% if messages %}
+                <ul class="dash-toasts" aria-live="polite">
+                    {% for message in messages %}<li class="dash-toast dash-toast--{{ message.tags }}">{{ message }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </body>
+</html>

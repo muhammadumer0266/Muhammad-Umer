@@ -16,7 +16,8 @@
                 <p class="field-help" id="question-help">
                     Up to {{ policy.max_question_length }} characters. Questions are logged anonymously to improve answers.
                 </p>
-                {% for error in form.question.errors %}<p class="field-error" id="question-error">{{ error }}</p>{% endfor %}
+                {% for error in form.question.errors %}<p class="field-error"
+   id="question-error">{{ error }}</p>{% endfor %}
             </div>
             <p>
                 <button class="btn btn--solid" type="submit">Ask</button>

@@ -1,9 +1,12 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.core.files.storage import FileSystemStorage
+from django.db import models, transaction
 
 from apps.core.models import TimeStampedModel
 from apps.core.uploads import (
     RandomFilename,
+    SeoFilename,
     image_or_pdf_validators,
     image_validators,
     pdf_validators,
@@ -19,10 +22,14 @@ class Profile(TimeStampedModel):
     bio_short = models.CharField(max_length=300, blank=True)
     bio_md = models.TextField(blank=True)
     photo = models.ImageField(
-        upload_to=RandomFilename("profile"), validators=image_validators, blank=True, null=True
-    )
-    resume_pdf = models.FileField(
-        upload_to=RandomFilename("resume"), validators=pdf_validators, blank=True, null=True
+        upload_to=SeoFilename("profile"),
+        validators=image_validators,
+        blank=True,
+        null=True,
+        help_text=(
+            "A clear, well-lit headshot (square, at least 800x800). Used on the site, in "
+            "link previews and in search results -- use the same photo as on LinkedIn/GitHub."
+        ),
     )
     available_for_work = models.BooleanField(default=False)
     public_email_visible = models.BooleanField(default=False)
@@ -223,3 +230,124 @@ class Certification(TimeStampedModel):
     @property
     def certificate_is_pdf(self) -> bool:
         return bool(self.certificate_file) and self.certificate_file.name.lower().endswith(".pdf")
+
+
+class Photo(TimeStampedModel):
+    """A photo of the owner, shown on /photos/ and submitted to image search.
+
+    Upload from the admin; title + alt text drive the file name, alt
+    attribute, structured data and image sitemap entry, so describe what's
+    actually in the picture.
+    """
+
+    title = models.CharField(
+        max_length=120, help_text="Short title, e.g. 'Speaking at PyCon Pakistan 2025'."
+    )
+    alt_text = models.CharField(
+        max_length=200,
+        help_text=(
+            "What the photo shows, for screen readers and image search, e.g. "
+            "'Muhammad Umer presenting a Django talk on stage'."
+        ),
+    )
+    caption = models.CharField(max_length=300, blank=True)
+    image = models.ImageField(
+        upload_to=SeoFilename("photos", title_field="title"),
+        validators=image_validators,
+        width_field="width",
+        height_field="height",
+        help_text="JPG/PNG/WebP, max 5 MB. At least 1200px wide works best for search.",
+    )
+    width = models.PositiveIntegerField(default=0, editable=False)
+    height = models.PositiveIntegerField(default=0, editable=False)
+    taken_on = models.DateField(blank=True, null=True)
+    location = models.CharField(max_length=120, blank=True)
+    is_published = models.BooleanField(default=True)
+    show_on_home = models.BooleanField(
+        default=False, help_text="Also show in the home page photo strip (first 4)."
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Lower numbers show first.")
+
+    class Meta:
+        ordering = ["order", "-taken_on", "-created_at"]
+        indexes = [models.Index(fields=["is_published", "order"])]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class PrivateStorage(FileSystemStorage):
+    """Files outside MEDIA_ROOT that have no URL at all.
+
+    A plain FileSystemStorage(base_url=None) silently falls back to
+    MEDIA_URL, so .url would still hand out a /media/... address. This one
+    refuses, and reads PRIVATE_MEDIA_ROOT on every access instead of caching
+    it at import time.
+    """
+
+    @property
+    def base_location(self):
+        return str(settings.PRIVATE_MEDIA_ROOT)
+
+    @property
+    def location(self):
+        import os
+
+        return os.path.abspath(self.base_location)
+
+    def url(self, name):
+        raise ValueError("This file is not accessible via a URL.")
+
+
+def private_storage() -> PrivateStorage:
+    """Callable storage, so migrations don't bake in a machine-specific path."""
+    return PrivateStorage()
+
+
+class Resume(TimeStampedModel):
+    """An uploaded resume. Exactly one can be active: the one visitors get."""
+
+    label = models.CharField(
+        max_length=120, help_text="For you only, e.g. 'October 2026 - backend roles'."
+    )
+    file = models.FileField(
+        upload_to=RandomFilename("resumes"), storage=private_storage, validators=pdf_validators
+    )
+    is_active = models.BooleanField(
+        default=True, help_text="The active resume is the one visitors download."
+    )
+    download_count = models.PositiveIntegerField(default=0, editable=False)
+
+    class Meta:
+        ordering = ["-is_active", "-created_at"]
+
+    def __str__(self) -> str:
+        return self.label
+
+    def save(self, *args, **kwargs) -> None:
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if self.is_active:
+                Resume.objects.exclude(pk=self.pk).filter(is_active=True).update(is_active=False)
+
+    @classmethod
+    def active(cls) -> "Resume | None":
+        return cls.objects.filter(is_active=True).first()
+
+
+class ResumeRequest(TimeStampedModel):
+    """Someone who entered their email to download the resume."""
+
+    email = models.EmailField()
+    resume = models.ForeignKey(
+        Resume, on_delete=models.SET_NULL, null=True, blank=True, related_name="requests"
+    )
+    downloaded = models.BooleanField(default=False)
+    ip_hash = models.CharField(max_length=64, blank=True, help_text="Salted hash, never a raw IP.")
+    user_agent_hash = models.CharField(max_length=64, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.email} ({self.created_at:%Y-%m-%d})"

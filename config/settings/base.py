@@ -24,11 +24,13 @@ SITE_NAME = "Muhammad Umer"
 CONTACT_EMAIL = env.str("CONTACT_EMAIL", default="")
 
 ADMIN_URL = env.str("ADMIN_URL", default="admin/")
-# Zero-trust admin: when non-empty, only these IPs/CIDRs even see the admin
+# ADMIN_URL is the secret path of the management dashboard (apps.dashboard),
+# which replaces Django's built-in admin.
+# Zero-trust admin: when non-empty, only these IPs/CIDRs even see the dashboard
 # (everyone else gets a 404). Empty means "no network restriction" -- auth,
 # lockout and (in prod) OTP still apply. See apps.core.middleware.
 ADMIN_ALLOWED_IPS = env.list("ADMIN_ALLOWED_IPS", default=[])
-# Admin login requires a TOTP code from an enrolled device. Off here so dev
+# Dashboard login requires a TOTP code from an enrolled device. Off here so dev
 # and tests aren't forced through enrollment; on by default in prod.py.
 # Enroll with: python manage.py enroll_admin_otp <username>
 ADMIN_REQUIRE_OTP = env.bool("ADMIN_REQUIRE_OTP", default=False)
@@ -50,7 +52,6 @@ AI_DAILY_BUDGET_USD = env.float("AI_DAILY_BUDGET_USD", default=0.0)
 AI_AUTO_REINDEX = env.bool("AI_AUTO_REINDEX", default=True)
 
 DJANGO_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -78,6 +79,7 @@ LOCAL_APPS = [
     "apps.seo",
     "apps.ai",
     "apps.api",
+    "apps.dashboard",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -161,6 +163,10 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# Files that must never be publicly addressable (resumes). Not under
+# MEDIA_ROOT, not served by Caddy; Django streams them only after the
+# email gate (apps/portfolio/resume_views.py).
+PRIVATE_MEDIA_ROOT = env.path("PRIVATE_MEDIA_ROOT", default=BASE_DIR / "private_media")
 
 # Uploads: keep big files on disk (not in memory), never world-writable.
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MB

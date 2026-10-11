@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <title>Locked · Studio</title>
+        <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    </head>
+    <body class="dash dash--auth">
+        <main class="auth-card">
+            <h1>Temporarily locked</h1>
+            <p class="auth-card__sub">
+                Too many failed sign-in attempts. Try again in an hour, or run
+                <code>python manage.py axes_reset</code> on the server.
+            </p>
+        </main>
+    </body>
+</html>

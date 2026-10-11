@@ -1,7 +1,7 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 
-from apps.portfolio.models import Certification, Entry, Tag
+from apps.portfolio.models import Certification, Entry, Photo, Tag
 
 
 class StaticViewSitemap(Sitemap):
@@ -18,6 +18,8 @@ class StaticViewSitemap(Sitemap):
         ]
         if Certification.objects.filter(is_published=True).exists():
             items.insert(3, "portfolio:certifications")
+        if Photo.objects.filter(is_published=True).exists():
+            items.insert(3, "portfolio:photos")
         return items
 
     def location(self, item: str) -> str:

@@ -6,7 +6,13 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.safestring import SafeString, mark_safe
 
 from apps.portfolio.models import Profile, SocialLink
-from apps.seo.jsonld import build_person, build_profile_page, build_website
+from apps.seo.jsonld import (
+    absolute,
+    build_person,
+    build_photo_gallery,
+    build_profile_page,
+    build_website,
+)
 
 register = template.Library()
 
@@ -44,3 +50,13 @@ def site_jsonld(profile: Profile, social_links: Iterable[SocialLink] = ()) -> Sa
 @register.simple_tag
 def profile_page_jsonld(profile: Profile) -> SafeString:
     return jsonld_script(build_profile_page(profile))
+
+
+@register.simple_tag
+def photo_gallery_jsonld(photos) -> SafeString:
+    return jsonld_script(build_photo_gallery(photos))
+
+
+@register.filter(name="absolute_url")
+def absolute_url_filter(url: str) -> str:
+    return absolute(url or "")

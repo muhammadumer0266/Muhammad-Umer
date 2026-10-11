@@ -4,6 +4,7 @@
 !.env.example
 *.sqlite3
 media/
+private_media/
 staticfiles/
 .venv/
 **/__pycache__/

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load seo_extras %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    {% if photos %}
+        {% photo_gallery_jsonld photos %}
+    {% else %}
+        <meta name="robots" content="noindex">
+    {% endif %}
+{% endblock %}
+{% block og_image %}
+    {% with first=photos.0 %}
+        {% if first %}
+            <meta property="og:image" content="{{ first.image.url|absolute_url }}">
+            <meta property="og:image:alt" content="{{ first.alt_text }}">
+            <meta property="og:image:width" content="{{ first.width }}">
+            <meta property="og:image:height" content="{{ first.height }}">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:image" content="{{ first.image.url|absolute_url }}">
+        {% else %}
+            {{ block.super }}
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+{% block content %}
+    <h1>Photos of {{ profile.full_name }}</h1>
+    <p class="lede">Talks, events, work and portraits.</p>
+    {% if photos %}
+        <div class="gallery">
+            {% for photo in photos %}
+                <figure class="gallery__item">
+                    <a href="{{ photo.image.url }}">
+                        <img src="{{ photo.image.url }}"
+                             alt="{{ photo.alt_text }}"
+                             width="{{ photo.width }}"
+                             height="{{ photo.height }}"
+                             {% if forloop.counter > 2 %}loading="lazy"{% endif %}
+                             decoding="async">
+                    </a>
+                    <figcaption>
+                        <span class="gallery__title">{{ photo.title }}</span>
+                        {% if photo.caption %}<span>{{ photo.caption }}</span>{% endif %}
+                        {% if photo.taken_on or photo.location %}
+                            <span class="gallery__meta">
+                                {% if photo.location %}{{ photo.location }}{% endif %}
+                                {% if photo.taken_on and photo.location %}·{% endif %}
+                                {% if photo.taken_on %}{{ photo.taken_on|date:"M Y" }}{% endif %}
+                            </span>
+                        {% endif %}
+                    </figcaption>
+                </figure>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No photos published yet — check back soon.</p>
+    {% endif %}
+{% endblock %}

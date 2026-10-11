@@ -41,7 +41,8 @@
                     <a href="{{ certification.credential_url }}" rel="noopener">Verify with issuer</a>
                 {% endif %}
                 {% if certification.certificate_file %}
-                    <a href="{{ certification.certificate_file.url }}" rel="noopener">View certificate{% if certification.certificate_is_pdf %} (PDF){% endif %}</a>
+                    <a href="{{ certification.certificate_file.url }}"
+                       rel="noopener">View certificate{% if certification.certificate_is_pdf %} (PDF){% endif %}</a>
                 {% endif %}
             </div>
         {% endif %}
