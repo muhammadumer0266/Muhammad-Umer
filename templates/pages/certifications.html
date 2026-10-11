@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}{{ page_description }}{% endblock %}
+{% block extra_head %}
+    {% if not certifications %}<meta name="robots" content="noindex">{% endif %}
+{% endblock %}
+{% block content %}
+    <h1>Certifications</h1>
+    <p class="lede">Credentials {{ profile.full_name }} has earned, with issuer verification links where they exist.</p>
+    {% if certifications %}
+        {% for certification in certifications %}
+            {% include "partials/_certification_card.html" with show_tags=True %}
+        {% endfor %}
+    {% else %}
+        <p>No certifications published yet — check back soon.</p>
+    {% endif %}
+{% endblock %}

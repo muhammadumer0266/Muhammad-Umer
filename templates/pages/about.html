@@ -6,36 +6,66 @@
     {% profile_page_jsonld profile %}
 {% endblock %}
 {% block content %}
-    <h1>About</h1>
-    <p class="lede">Muhammad Umer is a Django and AI engineer.</p>
-    {% if profile.bio_md %}
-        <div>{{ profile.bio_md|markdown }}</div>
-    {% else %}
-        <p>
-            <em>TODO(owner)</em>: a longer bio goes here once supplied — see
-            <code>docs/TODO_OWNER.md</code>.
-        </p>
-    {% endif %}
-    <section id="stack" aria-labelledby="stack-heading">
-        <h2 id="stack-heading">Toolbox</h2>
-        {% if skill_groups %}
+    <div class="profile-intro">
+        {% if profile.photo %}
+            <img class="profile-intro__photo"
+                 src="{{ profile.photo.url }}"
+                 alt="Photo of {{ profile.full_name }}"
+                 width="160"
+                 height="160">
+        {% endif %}
+        <div>
+            <h1>About</h1>
+            <p class="lede">
+                {% if profile.bio_short %}
+                    {{ profile.bio_short }}
+                {% else %}
+                    {{ profile.full_name }} is a Django and AI engineer.
+                {% endif %}
+            </p>
+            {% if profile.location_display or profile.available_for_work %}
+                <p class="entry-card__meta">
+                    {% if profile.location_display %}{{ profile.location_display }}{% endif %}
+                    {% if profile.location_display and profile.available_for_work %}·{% endif %}
+                    {% if profile.available_for_work %}
+                        <span class="status-dot" aria-hidden="true"></span> Available for new work
+                    {% endif %}
+                </p>
+            {% endif %}
+            {% if profile.resume_pdf %}
+                <p>
+                    <a class="btn" href="{{ profile.resume_pdf.url }}" rel="noopener">Download résumé (PDF)</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    {% if profile.bio_md %}<div class="prose">{{ profile.bio_md|markdown }}</div>{% endif %}
+    {% if skill_groups %}
+        <section id="stack" aria-labelledby="stack-heading">
+            <h2 id="stack-heading">Toolbox</h2>
             {% for group in skill_groups %}
                 <h3>{{ group.name }}</h3>
-                <dl class="toolbox">
+                <ul class="chip-row" aria-label="{{ group.name }}">
                     {% for skill in group.skills.all %}
-                        <div>
-                            <dt>{{ skill.name }}</dt>
-                        </div>
+                        <li class="chip">{{ skill.name }}</li>
                     {% endfor %}
-                </dl>
+                </ul>
             {% endfor %}
-        {% else %}
-            <p><em>TODO(owner)</em>: skills/toolbox not yet configured in admin.</p>
-        {% endif %}
-    </section>
+        </section>
+    {% endif %}
+    {% if certifications %}
+        <section aria-labelledby="certifications-heading">
+            <h2 id="certifications-heading">Certifications</h2>
+            {% for certification in certifications %}
+                {% include "partials/_certification_card.html" %}
+            {% endfor %}
+        </section>
+    {% endif %}
     <section aria-labelledby="api-heading">
         <h2 id="api-heading">A real, live API</h2>
-        <p>This site exposes a small read-only API once it ships (see <code>/api/docs/</code>):</p>
+        <p>
+            This site exposes a small, read-only public API (see <a href="{% url 'api:docs' %}">the API docs</a>):
+        </p>
         <pre><code>curl {{ SITE_URL }}/api/v1/entries/</code></pre>
     </section>
 {% endblock %}

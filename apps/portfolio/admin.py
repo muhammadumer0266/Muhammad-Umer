@@ -7,7 +7,7 @@ from django.utils.safestring import SafeString, mark_safe
 from apps.core.markdown import render_markdown
 
 from . import services
-from .models import Entry, Profile, Skill, SkillGroup, SocialLink, Tag
+from .models import Certification, Entry, Profile, Skill, SkillGroup, SocialLink, Tag
 
 
 class MarkdownPreviewMixin:
@@ -31,7 +31,9 @@ class ImagePreviewMixin:
         image = getattr(obj, self.image_field, None)
         if not image:
             return mark_safe("<em>No image</em>")  # nosec B308
-        return format_html('<img src="{}" style="max-height:120px" />', image.url)
+        if not image.name.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            return format_html('<a href="{}">View file</a>', image.url)
+        return format_html('<img src="{}" alt="" style="max-height:120px" />', image.url)
 
 
 @admin.register(Profile)
@@ -108,3 +110,36 @@ class SkillInline(admin.TabularInline):
 class SkillGroupAdmin(admin.ModelAdmin):
     list_display = ["name", "order"]
     inlines = [SkillInline]
+
+
+@admin.register(Certification)
+class CertificationAdmin(ImagePreviewMixin, admin.ModelAdmin):
+    image_field = "badge_image"
+    list_display = ["title", "issuer", "issue_date", "expiry_date", "is_published", "order"]
+    list_editable = ["is_published", "order"]
+    list_filter = ["is_published", "issuer"]
+    search_fields = ["title", "issuer", "credential_id"]
+    autocomplete_fields = ["tags"]
+    readonly_fields = ["image_preview", "created_at", "updated_at"]
+    date_hierarchy = "issue_date"
+    fieldsets = [
+        (None, {"fields": ["title", "issuer", "description", "tags"]}),
+        ("Dates", {"fields": ["issue_date", "expiry_date"]}),
+        ("Verification", {"fields": ["credential_id", "credential_url"]}),
+        ("Files", {"fields": ["badge_image", "image_preview", "certificate_file"]}),
+        ("Visibility", {"fields": ["is_published", "order"]}),
+        ("Timestamps", {"fields": ["created_at", "updated_at"], "classes": ["collapse"]}),
+    ]
+    actions = ["publish", "unpublish"]
+
+    @admin.action(description="Publish selected certifications")
+    def publish(self, request: HttpRequest, queryset: QuerySet[Certification]) -> None:
+        for certification in queryset:
+            certification.is_published = True
+            certification.save(update_fields=["is_published", "updated_at"])
+
+    @admin.action(description="Unpublish selected certifications")
+    def unpublish(self, request: HttpRequest, queryset: QuerySet[Certification]) -> None:
+        for certification in queryset:
+            certification.is_published = False
+            certification.save(update_fields=["is_published", "updated_at"])

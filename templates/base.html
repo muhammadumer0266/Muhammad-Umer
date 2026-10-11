@@ -31,16 +31,19 @@
                 <a class="site-header__name" href="{% url 'portfolio:home' %}">{{ profile.full_name }}</a>
                 <nav class="site-nav" aria-label="Primary">
                     <ul>
-                        <li><a href="{% url 'portfolio:home' %}">Home</a></li>
-                        <li><a href="{% url 'portfolio:work_list' %}">Work</a></li>
-                        <li><a href="{% url 'portfolio:about' %}">About</a></li>
-                        <li><a href="{% url 'contact:contact' %}">Contact</a></li>
+                        {% for item in nav_items %}
+                            <li>
+                                <a href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </nav>
+                {# Hidden until main.js runs: without JS there's no sound to toggle. #}
                 <button type="button"
                         id="sound-toggle"
                         class="btn sound-toggle"
-                        aria-pressed="false">
+                        aria-pressed="false"
+                        hidden>
                     <span data-sound-label>Sound off</span>
                 </button>
             </div>
@@ -60,8 +63,9 @@
                 <small>© {% now "Y" %} {{ profile.full_name }}</small>
                 <ul>
                     {% for link in social_links %}
-                        <li><a href="{{ link.url }}"
-   {% if link.rel_me %} rel="me"{% endif %}>{{ link.get_platform_display }}</a></li>
+                        <li>
+                            <a href="{{ link.url }}"{% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
+                        </li>
                     {% endfor %}
                     <li><a href="{% url 'core:privacy' %}">Privacy</a></li>
                 </ul>

@@ -3,7 +3,7 @@
 // and tilt on top of already-readable, already-navigable server HTML.
 import { createAudioController } from "./audio.js";
 import { initReveal } from "./reveal.js";
-import { attachTiltToAll } from "./tilt.js";
+import { attachTilt, attachTiltToAll } from "./tilt.js";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const audio = createAudioController();
@@ -11,8 +11,17 @@ const audio = createAudioController();
 initReveal(reducedMotion);
 attachTiltToAll(".entry-card", { ping: audio.ping, reducedMotion });
 
+// HTMX filter swaps on /work/ replace the cards; give the new ones tilt too.
+document.body.addEventListener("htmx:afterSettle", () => {
+  document.querySelectorAll(".entry-card:not([data-tilt-id])").forEach((node, i) => {
+    attachTilt(node, { ping: audio.ping, pingIndex: i % 5, reducedMotion });
+  });
+});
+
 function wireSoundToggle(button) {
   if (!button) return;
+  // Server-rendered hidden: without JS there is no audio to toggle.
+  button.hidden = false;
   button.addEventListener("click", () => {
     audio.setSound(!audio.isOn(), (on) => {
       button.setAttribute("aria-pressed", on ? "true" : "false");

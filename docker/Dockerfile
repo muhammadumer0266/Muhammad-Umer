@@ -26,13 +26,21 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY . .
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 
-RUN python manage.py collectstatic --noinput --settings=config.settings.prod \
-    && chown -R app:app /app
+# prod settings fail fast without these, so collectstatic gets throwaway
+# values that exist only for this build step. Code stays root-owned and
+# read-only for the runtime user; only /app/media is writable by it.
+RUN DJANGO_SECRET_KEY=collectstatic-only ALLOWED_HOSTS=localhost \
+    CSRF_TRUSTED_ORIGINS=https://localhost \
+    python manage.py collectstatic --noinput --settings=config.settings.prod \
+    && mkdir -p /app/media \
+    && chown -R app:app /app/media
 
 USER app
 
+# Sends the canonical Host and Caddy's X-Forwarded-Proto, so host validation
+# and the HTTPS redirect don't fail the probe.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz/')"
+    CMD python -c "import os, urllib.request as u; h=os.environ['ALLOWED_HOSTS'].split(',')[0]; u.urlopen(u.Request('http://127.0.0.1:8000/healthz/', headers={'Host': h, 'X-Forwarded-Proto': 'https'}), timeout=4)"
 
 EXPOSE 8000
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

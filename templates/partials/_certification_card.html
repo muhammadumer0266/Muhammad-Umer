@@ -1,0 +1,49 @@
+<article class="entry-card cert-card">
+    {% if certification.badge_image %}
+        <img class="cert-card__badge"
+             src="{{ certification.badge_image.url }}"
+             alt=""
+             width="64"
+             height="64"
+             loading="lazy"
+             decoding="async">
+    {% endif %}
+    <div class="cert-card__body">
+        <div class="entry-card__meta">
+            <span class="status-dot{% if certification.is_expired %} status-dot--muted{% endif %}"
+                  aria-hidden="true"></span>
+            {{ certification.issuer }} · {{ certification.issue_date|date:"M Y" }}
+            {% if certification.is_expired %}
+                <span class="sample-badge sample-badge--muted">Expired</span>
+            {% elif certification.expiry_date %}
+                · valid until {{ certification.expiry_date|date:"M Y" }}
+            {% endif %}
+        </div>
+        <h3>{{ certification.title }}</h3>
+        {% if certification.description %}<p>{{ certification.description }}</p>{% endif %}
+        {% if show_tags and certification.tags.all %}
+            <ul class="chip-row" aria-label="Skills">
+                {% for tag in certification.tags.all %}
+                    <li>
+                        <a class="chip" href="{% url 'portfolio:tag_detail' tag.slug %}">{{ tag.name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% if certification.credential_id %}
+            <p class="cert-card__id">
+                Credential ID <code>{{ certification.credential_id }}</code>
+            </p>
+        {% endif %}
+        {% if certification.credential_url or certification.certificate_file %}
+            <div class="entry-card__links">
+                {% if certification.credential_url %}
+                    <a href="{{ certification.credential_url }}" rel="noopener">Verify with issuer</a>
+                {% endif %}
+                {% if certification.certificate_file %}
+                    <a href="{{ certification.certificate_file.url }}" rel="noopener">View certificate{% if certification.certificate_is_pdf %} (PDF){% endif %}</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</article>

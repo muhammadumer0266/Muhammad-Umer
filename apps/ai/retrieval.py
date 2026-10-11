@@ -33,7 +33,13 @@ def _cosine_similarity(a: dict[str, float], b: dict[str, float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def retrieve(question: str, provider: Provider) -> list[RetrievedChunk]:
+def retrieve(
+    question: str,
+    provider: Provider,
+    *,
+    threshold: float = SIMILARITY_THRESHOLD,
+    top_k: int = TOP_K,
+) -> list[RetrievedChunk]:
     (question_embedding,) = provider.embed([question])
 
     scored = [
@@ -43,5 +49,5 @@ def retrieve(question: str, provider: Provider) -> list[RetrievedChunk]:
         for chunk in RagChunk.objects.select_related("document").all()
     ]
     scored.sort(key=lambda r: r.similarity, reverse=True)
-    above_threshold = [r for r in scored if r.similarity >= SIMILARITY_THRESHOLD]
-    return above_threshold[:TOP_K]
+    above_threshold = [r for r in scored if r.similarity >= threshold]
+    return above_threshold[:top_k]

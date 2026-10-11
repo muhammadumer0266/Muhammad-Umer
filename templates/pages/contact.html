@@ -4,12 +4,17 @@
 {% block content %}
     <h1 id="contact">Contact</h1>
     <p class="lede">
-        {% if profile.public_email_visible %}
-            Email is available below, or use the form.
+        {% if public_email %}
+            Email <a href="mailto:{{ public_email }}">{{ public_email }}</a>, or use the form below.
         {% else %}
-            Use the form below — this is the primary way to reach Muhammad.
+            Use the form below — this is the primary way to reach {{ profile.full_name }}.
         {% endif %}
     </p>
+    {% if form.non_field_errors %}
+        <div class="form-error" role="alert">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
     <form class="stack" method="post" novalidate>
         {% csrf_token %}
         {{ form.rendered_at }}
@@ -36,18 +41,16 @@
             <button class="btn btn--solid" type="submit">Send message</button>
         </p>
     </form>
-    <section aria-labelledby="profiles-heading">
-        <h2 id="profiles-heading">Find Muhammad elsewhere</h2>
-        {% if social_links %}
+    {% if social_links %}
+        <section aria-labelledby="profiles-heading">
+            <h2 id="profiles-heading">Find {{ profile.full_name }} elsewhere</h2>
             <ul class="chip-row">
                 {% for link in social_links %}
-                    <li><a class="chip"
-   href="{{ link.url }}"
-   {% if link.rel_me %} rel="me"{% endif %}>{{ link.get_platform_display }}</a></li>
+                    <li>
+                        <a class="chip" href="{{ link.url }}"{% if link.rel_me %} rel="me noopener"{% else %} rel="noopener"{% endif %}>{{ link.get_platform_display }}</a>
+                    </li>
                 {% endfor %}
             </ul>
-        {% else %}
-            <p><em>TODO(owner)</em>: social profile links not yet added in admin.</p>
-        {% endif %}
-    </section>
+        </section>
+    {% endif %}
 {% endblock %}

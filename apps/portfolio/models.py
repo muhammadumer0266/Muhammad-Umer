@@ -2,6 +2,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.core.models import TimeStampedModel
+from apps.core.uploads import (
+    RandomFilename,
+    image_or_pdf_validators,
+    image_validators,
+    pdf_validators,
+)
 
 
 class Profile(TimeStampedModel):
@@ -12,8 +18,12 @@ class Profile(TimeStampedModel):
     headline = models.CharField(max_length=200, blank=True)
     bio_short = models.CharField(max_length=300, blank=True)
     bio_md = models.TextField(blank=True)
-    photo = models.ImageField(upload_to="profile/", blank=True, null=True)
-    resume_pdf = models.FileField(upload_to="resume/", blank=True, null=True)
+    photo = models.ImageField(
+        upload_to=RandomFilename("profile"), validators=image_validators, blank=True, null=True
+    )
+    resume_pdf = models.FileField(
+        upload_to=RandomFilename("resume"), validators=pdf_validators, blank=True, null=True
+    )
     available_for_work = models.BooleanField(default=False)
     public_email_visible = models.BooleanField(default=False)
     location_display = models.CharField(max_length=120, blank=True)
@@ -99,7 +109,9 @@ class Entry(TimeStampedModel):
     repo_url = models.URLField(blank=True)
     writeup_url = models.URLField(blank=True)
     featured = models.BooleanField(default=False)
-    cover_image = models.ImageField(upload_to="entries/", blank=True, null=True)
+    cover_image = models.ImageField(
+        upload_to=RandomFilename("entries"), validators=image_validators, blank=True, null=True
+    )
     is_published = models.BooleanField(default=False)
     is_sample = models.BooleanField(
         default=False,
@@ -148,3 +160,66 @@ class Skill(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.group.name} / {self.name}"
+
+
+class Certification(TimeStampedModel):
+    """A certificate or credential, managed entirely from the admin.
+
+    Upload a badge image and/or the certificate itself (PDF or image), tick
+    "published", and it appears on /certifications/, the About page, the
+    public API and (after the automatic RAG reindex) in Ask answers.
+    """
+
+    title = models.CharField(max_length=200)
+    issuer = models.CharField(max_length=200)
+    issue_date = models.DateField(help_text="Stored at month precision (first of the month).")
+    expiry_date = models.DateField(
+        blank=True, null=True, help_text="Leave empty if it doesn't expire."
+    )
+    credential_id = models.CharField(max_length=200, blank=True)
+    credential_url = models.URLField(
+        blank=True, help_text="Public verification link from the issuer, if any."
+    )
+    description = models.CharField(max_length=500, blank=True)
+    tags = models.ManyToManyField(Tag, related_name="certifications", blank=True)
+    badge_image = models.ImageField(
+        upload_to=RandomFilename("certifications/badges"),
+        validators=image_validators,
+        blank=True,
+        null=True,
+        help_text="JPG/PNG/WebP, max 5 MB. Shown on the card.",
+    )
+    certificate_file = models.FileField(
+        upload_to=RandomFilename("certifications/files"),
+        validators=image_or_pdf_validators,
+        blank=True,
+        null=True,
+        help_text="The certificate itself: PDF (max 10 MB) or JPG/PNG/WebP (max 5 MB).",
+    )
+    is_published = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(
+        default=0, help_text="Lower numbers show first; ties are newest first."
+    )
+
+    class Meta:
+        ordering = ["order", "-issue_date", "title"]
+        indexes = [models.Index(fields=["is_published", "order"])]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.issuer})"
+
+    def clean(self) -> None:
+        if self.issue_date:
+            self.issue_date = self.issue_date.replace(day=1)
+        if self.expiry_date and self.issue_date and self.expiry_date < self.issue_date:
+            raise ValidationError({"expiry_date": "Expiry date can't be before the issue date."})
+
+    @property
+    def is_expired(self) -> bool:
+        from django.utils import timezone
+
+        return bool(self.expiry_date and self.expiry_date < timezone.localdate())
+
+    @property
+    def certificate_is_pdf(self) -> bool:
+        return bool(self.certificate_file) and self.certificate_file.name.lower().endswith(".pdf")

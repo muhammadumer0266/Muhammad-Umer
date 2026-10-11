@@ -4,7 +4,8 @@ services:
     environment:
       POSTGRES_DB: portfolio
       POSTGRES_USER: portfolio
-      POSTGRES_PASSWORD: portfolio
+      # Required, never defaulted: compose refuses to start without it.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -28,13 +29,21 @@ services:
     entrypoint: ["/app/docker/entrypoint.sh"]
     command: ["web"]
     env_file: .env
+    volumes:
+      - media:/app/media
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "8000:8000"
+    # Deliberately no public port: Django is reachable only through Caddy.
+    # Publishing 8000 would let clients bypass TLS and the security headers,
+    # and forge X-Forwarded-For/-Proto. For local debugging only, bind to
+    # loopback: ports: ["127.0.0.1:8000:8000"]
+    expose:
+      - "8000"
+    security_opt:
+      - no-new-privileges:true
 
   worker:
     build:
@@ -43,6 +52,10 @@ services:
     entrypoint: ["/app/docker/entrypoint.sh"]
     command: ["worker"]
     env_file: .env
+    volumes:
+      - media:/app/media
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
@@ -56,6 +69,8 @@ services:
     entrypoint: ["/app/docker/entrypoint.sh"]
     command: ["beat"]
     env_file: .env
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       db:
         condition: service_healthy
@@ -68,11 +83,13 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
+      - media:/srv/media:ro
     depends_on:
       - web
 
 volumes:
   pgdata:
   caddy_data:
+  media:

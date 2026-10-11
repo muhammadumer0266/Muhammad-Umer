@@ -24,6 +24,18 @@ SITE_NAME = "Muhammad Umer"
 CONTACT_EMAIL = env.str("CONTACT_EMAIL", default="")
 
 ADMIN_URL = env.str("ADMIN_URL", default="admin/")
+# Zero-trust admin: when non-empty, only these IPs/CIDRs even see the admin
+# (everyone else gets a 404). Empty means "no network restriction" -- auth,
+# lockout and (in prod) OTP still apply. See apps.core.middleware.
+ADMIN_ALLOWED_IPS = env.list("ADMIN_ALLOWED_IPS", default=[])
+# Admin login requires a TOTP code from an enrolled device. Off here so dev
+# and tests aren't forced through enrollment; on by default in prod.py.
+# Enroll with: python manage.py enroll_admin_otp <username>
+ADMIN_REQUIRE_OTP = env.bool("ADMIN_REQUIRE_OTP", default=False)
+
+# Number of reverse proxies in front of Django that each append one
+# X-Forwarded-For entry. 0 = Django is hit directly. See apps/core/net.py.
+TRUSTED_PROXY_COUNT = env.int("TRUSTED_PROXY_COUNT", default=0)
 
 GOOGLE_SITE_VERIFICATION = env.str("GOOGLE_SITE_VERIFICATION", default="")
 BING_SITE_VERIFICATION = env.str("BING_SITE_VERIFICATION", default="")
@@ -33,6 +45,9 @@ BING_SITE_VERIFICATION = env.str("BING_SITE_VERIFICATION", default="")
 # enforced (fine for "fake", required before any real provider goes live).
 AI_PROVIDER = env.str("AI_PROVIDER", default="fake")
 AI_DAILY_BUDGET_USD = env.float("AI_DAILY_BUDGET_USD", default=0.0)
+# Rebuild the RAG index automatically (via Celery) whenever published
+# content changes in the admin. See apps/ai/signals.py.
+AI_AUTO_REINDEX = env.bool("AI_AUTO_REINDEX", default=True)
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -51,6 +66,9 @@ THIRD_PARTY_APPS: list[str] = [
     "drf_spectacular",
     "csp",
     "axes",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
 ]
 
 LOCAL_APPS = [
@@ -66,13 +84,16 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.core.middleware.AdminAccessMiddleware",
     "csp.middleware.CSPMiddleware",
     "apps.core.middleware.PermissionsPolicyMiddleware",
+    "apps.core.middleware.IsolationHeadersMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.http.ConditionalGetMiddleware",
@@ -102,6 +123,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "apps.core.context_processors.site_meta",
                 "apps.portfolio.context_processors.profile_context",
+                "apps.portfolio.context_processors.navigation",
                 "apps.seo.context_processors.canonical_url",
             ],
         },
@@ -140,13 +162,28 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Uploads: keep big files on disk (not in memory), never world-writable.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440  # 2.5 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+FILE_UPLOAD_PERMISSIONS = 0o640
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o750
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Security defaults (tightened further in prod.py) ---
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True  # no JS on this site reads the CSRF cookie
+# The only sessions on this site are admin logins: keep them short-lived and
+# gone when the browser closes, so a forgotten/stolen session expires fast.
+SESSION_COOKIE_AGE = 60 * 60 * 2
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # --- Structured logging ---
 LOGGING = {
@@ -165,7 +202,12 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=True)
 
 # --- Read-only public API ---
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+    # Zero trust: the public API is anonymous and read-only, so it accepts no
+    # credentials at all -- an admin's session cookie can never elevate an
+    # API request, and there's no CSRF surface to defend.
+    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_PERMISSION_CLASSES": ["apps.api.permissions.ReadOnly"],
+    "UNAUTHENTICATED_USER": None,
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.AnonRateThrottle"],
@@ -213,14 +255,28 @@ CONTENT_SECURITY_POLICY = {
         "object-src": [csp_constants.NONE],
         "base-uri": [csp_constants.SELF],
         "frame-ancestors": [csp_constants.NONE],
+        "form-action": [csp_constants.SELF],
+        "frame-src": [csp_constants.NONE],
+        "worker-src": [csp_constants.SELF],
+        "manifest-src": [csp_constants.SELF],
     },
 }
 
 # --- Permissions-Policy: disable unused browser features ---
-PERMISSIONS_POLICY = "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+PERMISSIONS_POLICY = (
+    "accelerometer=(), autoplay=(), camera=(), display-capture=(), "
+    "encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), "
+    "hid=(), magnetometer=(), microphone=(), midi=(), "
+    "payment=(), publickey-credentials-get=(), serial=(), usb=(), "
+    "xr-spatial-tracking=()"
+)
 
 # --- django-axes: lock out the admin after repeated failed logins ---
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1  # hours
 AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 AXES_RESET_ON_SUCCESS = True
+AXES_CLIENT_IP_CALLABLE = "apps.core.net.client_ip"
+
+# --- django-ratelimit: same proxy-aware client IP as axes ---
+RATELIMIT_IP_META_KEY = "apps.core.net.client_ip"

@@ -1,14 +1,48 @@
 {$SITE_DOMAIN:localhost} {
 	encode zstd gzip
 
+	# Never advertise the server software.
+	header -Server
+
+	# Django sets the full security header set (CSP with per-request nonces,
+	# HSTS, Permissions-Policy, COOP/CORP...). Caddy only fills in a header
+	# when Django didn't send one ("?" = set-if-missing), so it can never
+	# silently downgrade Django's stricter values.
 	header {
-		Strict-Transport-Security "max-age=3600; includeSubDomains"
-		X-Content-Type-Options "nosniff"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		?Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		?X-Content-Type-Options "nosniff"
+		?Referrer-Policy "strict-origin-when-cross-origin"
+		?X-Frame-Options "DENY"
 	}
 
-	reverse_proxy web:8000
+	# Uploaded media (profile photo, resume, certificates) is served
+	# straight from the shared volume, never executed. Uploads are already
+	# restricted to JPG/PNG/WebP/PDF with content checks (apps/core/uploads.py);
+	# the sandbox CSP means that even if an HTML/SVG file ever slipped past
+	# that, the browser would render it with no script, no same-origin
+	# access, no forms. PDFs can't take `sandbox` (Chrome refuses to show a
+	# sandboxed PDF), so they get a no-resources CSP instead.
+	handle_path /media/* {
+		root * /srv/media
+		@pdf path *.pdf
+		@notpdf not path *.pdf
+		header @pdf Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+		header @notpdf Content-Security-Policy "default-src 'none'; img-src 'self'; frame-ancestors 'none'; sandbox"
+		header {
+			X-Content-Type-Options "nosniff"
+			Cross-Origin-Resource-Policy "same-origin"
+			Cache-Control "public, max-age=86400"
+			X-Robots-Tag "noindex"
+		}
+		file_server
+	}
+
+	# Only Caddy may speak to Django: it overwrites X-Forwarded-For/-Proto
+	# with what it actually saw (client-supplied values are discarded), which
+	# is what apps/core/net.py and SECURE_PROXY_SSL_HEADER rely on.
+	reverse_proxy web:8000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
 }
 
 www.{$SITE_DOMAIN:localhost} {

@@ -49,7 +49,9 @@ def test_tag_detail_renders_only_matching_entries(client, django_assert_max_num_
     matching = EntryFactory(is_published=True, tags=[tag], title="Matching entry")
     other = EntryFactory(is_published=True, title="Other entry")
 
-    with django_assert_max_num_queries(8):
+    # 9 on a cold cache: the nav's cached "any published certifications?"
+    # check runs once, then is served from cache (apps.portfolio.selectors).
+    with django_assert_max_num_queries(9):
         response = client.get(reverse("portfolio:tag_detail", args=[tag.slug]))
 
     assert response.status_code == 200

@@ -7,6 +7,7 @@ from . import views
 router = DefaultRouter()
 router.register("entries", views.EntryViewSet, basename="entry")
 router.register("tags", views.TagViewSet, basename="tag")
+router.register("certifications", views.CertificationViewSet, basename="certification")
 
 app_name = "api"
 

@@ -3,19 +3,26 @@
 {% block description %}{{ page_description }}{% endblock %}
 {% block content %}
     <section id="hero" class="hero rv">
-        <span class="label">Django developer · AI engineer</span>
+        <span class="label">{{ profile.headline|default:"Django developer · AI engineer" }}</span>
         <h1>{{ profile.full_name }}</h1>
         <p class="lede">
             {% if profile.bio_short %}
                 {{ profile.bio_short }}
             {% else %}
-                Muhammad Umer is a Django and AI engineer. He builds production-grade
+                {{ profile.full_name }} is a Django and AI engineer. He builds production-grade
                 backends, retrieval-augmented tools, and this site itself — server-rendered,
                 tested, and readable with JavaScript off.
             {% endif %}
         </p>
-        <p><a class="btn btn--solid" href="{% url 'portfolio:work_list' %}">See the work</a>
-            <a class="btn" href="{% url 'contact:contact' %}">Get in touch</a></p>
+        {% if profile.available_for_work %}
+            <p class="availability">
+                <span class="status-dot" aria-hidden="true"></span> Available for new work
+            </p>
+        {% endif %}
+        <p class="btn-row">
+            <a class="btn btn--solid" href="{% url 'portfolio:work_list' %}">See the work</a>
+            <a class="btn" href="{% url 'contact:contact' %}">Get in touch</a>
+        </p>
     </section>
     <section aria-labelledby="featured-heading" class="rv">
         <h2 id="featured-heading">Featured work</h2>
@@ -27,35 +34,56 @@
                         {{ entry.get_kind_display }} · {{ entry.date|date:"M Y" }}
                         {% if entry.is_sample %}<span class="sample-badge">Sample</span>{% endif %}
                     </div>
-                    <h3>{{ entry.title }}</h3>
+                    {% if entry.has_case_study %}
+                        <h3><a href="{% url 'portfolio:entry_detail' entry.slug %}">{{ entry.title }}</a></h3>
+                    {% else %}
+                        <h3>{{ entry.title }}</h3>
+                    {% endif %}
                     <p>{{ entry.summary }}</p>
                     <div class="entry-card__links">
-                        {% if entry.repo_url %}<a href="{{ entry.repo_url }}">Read the repository</a>{% endif %}
-                        {% if entry.live_url %}<a href="{{ entry.live_url }}">View the live demo</a>{% endif %}
+                        {% if entry.has_case_study %}<a href="{% url 'portfolio:entry_detail' entry.slug %}">Case study</a>{% endif %}
+                        {% if entry.repo_url %}<a href="{{ entry.repo_url }}">Repository</a>{% endif %}
+                        {% if entry.live_url %}<a href="{{ entry.live_url }}">Live demo</a>{% endif %}
                     </div>
                 </article>
             {% endfor %}
+            <p><a href="{% url 'portfolio:work_list' %}">All work →</a></p>
         {% else %}
             <p>No featured work published yet — check back soon.</p>
         {% endif %}
     </section>
+    {% if certifications %}
+        <section aria-labelledby="certifications-heading" class="rv">
+            <h2 id="certifications-heading">Certifications</h2>
+            {% for certification in certifications %}
+                {% include "partials/_certification_card.html" %}
+            {% endfor %}
+            <p><a href="{% url 'portfolio:certifications' %}">All certifications →</a></p>
+        </section>
+    {% endif %}
     <section aria-labelledby="about-heading" class="rv">
         <h2 id="about-heading">About</h2>
         <p>
-            Muhammad Umer is a Django developer and AI engineer. Read more on the
-            <a href="{% url 'portfolio:about' %}">about page</a>.
+            {% if profile.headline %}
+                {{ profile.full_name }} — {{ profile.headline }}.
+            {% else %}
+                {{ profile.full_name }} is a Django developer and AI engineer.
+            {% endif %}
+            Read more on the <a href="{% url 'portfolio:about' %}">about page</a>.
         </p>
     </section>
     <section id="system" aria-labelledby="how-heading" class="rv">
         <h2 id="how-heading">How a request travels</h2>
-        <p class="label">Edge → Django → PostgreSQL/pgvector → Celery → provider</p>
+        <p class="label">Edge → Django → PostgreSQL → Celery → provider</p>
         <p>
             Every request hits Caddy first (TLS, compression, security headers), then
-            Django, then PostgreSQL — with pgvector powering the retrieval-augmented
-            "Ask" feature once it ships. Background work (email, embeddings, image
-            rendering) runs on Celery. See
-            <a href="https://github.com/muhammadumer0266">the GitHub profile</a> for the
-            code behind it.
+            Django, then PostgreSQL, which also stores the retrieval index behind the
+            "Ask" feature. Background work (email, re-indexing) runs on Celery.
+            {% for link in social_links %}
+                {% if link.platform == "github" %}
+                    See <a href="{{ link.url }}" rel="noopener">the GitHub profile</a> for the code behind it.
+                {% endif %}
+            {% endfor %}
         </p>
     </section>
     <section id="ask" aria-labelledby="ask-heading" class="rv">
@@ -65,10 +93,14 @@
             actually published on this site, with citations, or says
             honestly that it doesn't know.
         </p>
-        <p><a class="btn" href="{% url 'ai:ask' %}">Try it</a></p>
+        <p>
+            <a class="btn" href="{% url 'ai:ask' %}">Try it</a>
+        </p>
     </section>
     <section id="contact" aria-labelledby="contact-heading" class="rv">
         <h2 id="contact-heading">Get in touch</h2>
-        <p><a class="btn btn--solid" href="{% url 'contact:contact' %}">Contact Muhammad</a></p>
+        <p>
+            <a class="btn btn--solid" href="{% url 'contact:contact' %}">Contact {{ profile.full_name }}</a>
+        </p>
     </section>
 {% endblock %}

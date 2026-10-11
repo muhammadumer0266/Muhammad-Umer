@@ -1,22 +1,26 @@
+from django.conf import settings
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django_ratelimit.decorators import ratelimit
 
+from apps.portfolio.selectors import get_profile
+
 from .forms import ContactForm
 from .services import save_contact_message
 
-PAGE_DESCRIPTION = (
-    "Get in touch with Muhammad Umer, a Django developer and AI engineer, "
-    "using the form below or one of his public profiles."
-)
-
 
 def _render_form(request: HttpRequest, form: ContactForm, *, status: int = 200) -> HttpResponse:
+    profile = get_profile(request)
     context = {
         "form": form,
-        "page_title": "Contact | Muhammad Umer",
-        "page_description": PAGE_DESCRIPTION,
+        # Only ever exposed when the owner opts in from the admin.
+        "public_email": settings.CONTACT_EMAIL if profile.public_email_visible else "",
+        "page_title": f"Contact | {profile.full_name}",
+        "page_description": (
+            f"Get in touch with {profile.full_name}, a Django developer and AI engineer, "
+            "using the form below or one of his public profiles."
+        ),
     }
     return render(request, "pages/contact.html", context, status=status)
 

@@ -5,34 +5,42 @@
 {% block content %}
     <h1 id="ask">Ask</h1>
     <p class="lede">AI answers use only the content of this site and can be wrong.</p>
-    <form class="stack" method="post" novalidate>
-        {% csrf_token %}
-        <div>
-            <label for="{{ form.question.id_for_label }}">Your question</label>
-            {{ form.question }}
-            {% for error in form.question.errors %}
-                <p class="field-error" id="question-error">{{ error }}</p>
-            {% endfor %}
-        </div>
-        <p>
-            <button class="btn btn--solid" type="submit">Ask</button>
-        </p>
-    </form>
-    {% if limited %}
-        <p class="form-success">You've asked a lot of questions recently -- please wait a bit before asking another.</p>
-    {% elif result %}
-        <section aria-labelledby="answer-heading" aria-live="polite">
-            <h2 id="answer-heading">Answer</h2>
-            <p>{{ result.answer }}</p>
-            {% if result.citations %}
-                <ul class="chip-row">
-                    {% for citation in result.citations %}
-                        <li>
-                            <a class="chip" href="{{ citation.url }}">{{ citation.title }}</a>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </section>
+    {% if not policy.enabled %}
+        <p class="form-success" role="status">{{ policy.disabled_message }}</p>
+    {% else %}
+        <form class="stack" method="post" novalidate>
+            {% csrf_token %}
+            <div>
+                <label for="{{ form.question.id_for_label }}">Your question</label>
+                {{ form.question }}
+                <p class="field-help" id="question-help">
+                    Up to {{ policy.max_question_length }} characters. Questions are logged anonymously to improve answers.
+                </p>
+                {% for error in form.question.errors %}<p class="field-error" id="question-error">{{ error }}</p>{% endfor %}
+            </div>
+            <p>
+                <button class="btn btn--solid" type="submit">Ask</button>
+            </p>
+        </form>
+        {% if limited %}
+            <p class="form-error" role="alert">
+                You've asked a lot of questions recently -- please wait a bit before asking another.
+            </p>
+        {% elif result %}
+            <section aria-labelledby="answer-heading" aria-live="polite">
+                <h2 id="answer-heading">Answer</h2>
+                <p>{{ result.answer }}</p>
+                {% if result.citations %}
+                    <p class="label">Sources</p>
+                    <ul class="chip-row">
+                        {% for citation in result.citations %}
+                            <li>
+                                <a class="chip" href="{{ citation.url }}">{{ citation.title }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </section>
+        {% endif %}
     {% endif %}
 {% endblock %}
